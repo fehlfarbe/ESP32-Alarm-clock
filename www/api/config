@@ -1,0 +1,43 @@
+{
+    "general" : {
+        "audio_volume" : 14,
+        "time_offset" : 7200
+    },
+    "alarms" : [
+        {
+            "name" : "alarm4",
+            "dow" : [3, 4],
+            "hour" : 10,
+            "minute" : 30,
+            "file" : "song1.mp3"
+        },
+        {
+            "name" : "alarm1",
+            "dow" : [5, 6],
+            "hour" : 12,
+            "minute" : 30,
+            "file" : "song1.mp3"
+        }, 
+        {
+            "name" : "alarm2",
+            "dow" : [0, 2],
+            "hour" : 16,
+            "minute" : 45,
+            "file" : "song2.mp3"
+        },
+        {
+            "name" : "alarm2",
+            "dow" : [0, 1, 2, 3, 4, 5],
+            "hour" : 10,
+            "minute" : 50,
+            "file" : "song3.mp3"
+        },
+        {
+            "name" : "alarm3",
+            "dow" : [0, 2],
+            "hour" : 10,
+            "minute" : 50,
+            "file" : "song3.mp3"
+        }
+    ]
+}
