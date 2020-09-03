@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>MP3 Alarm</title>
+
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/select.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/knockout.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/select.min.js"></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+        <a class="navbar-brand" href="#">MP3Alarm</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault"
+            aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Settings</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <main role="main" class="container">
+
+        <div class="starter-template">
+            <h1>MP3 Alarm</h1>
+            <p class="lead">This is the MP3 Alarm configuration site.</p>
+        </div>
+
+        <div class="col-md-12">
+
+            <!-- Playback -->
+            <div class="row">
+                <h4 class="mb-3">Playback</h4>
+            </div>
+            <div class="row">
+                <div class="col-md-5">
+                    <label for="playback_song">Song/Stream</label>
+                    <select class="custom-select d-block w-100" id="playback_song"
+                        data-bind="options: $root.songs, optionsText: 'name', optionsValue: 'url', value: $root.selectedPlayback"
+                        placeholder="">
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="playback_control">Control</label>
+                    <div>
+                        <button class="btn btn-success " type="button" data-bind="click: $root.playSong"><svg
+                                width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-play-fill" fill="currentColor"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                            </svg></button>
+                        <button class="btn btn-warning" type="button" data-bind="click: $root.pauseSong"><svg
+                                width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-pause-fill"
+                                fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z" />
+                            </svg></button>
+                        <button class="btn btn-primary " type="button" data-bind="click: $root.stopSong"><svg
+                                width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-stop-fill" fill="currentColor"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z" />
+                            </svg></button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="playback_volume">Volume</label>
+                    <div>
+                        <input type="range" class="custom-range" id="playback_volume" placeholder="" min="0" max="21"
+                            data-bind="value: $root.volume">
+                        <span data-bind="text: $root.volume"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12">
+            <!-- General settings -->
+            <div class="row">
+                <h4 class="mb-3">Settings</h4>
+            </div>
+            <form class="needs-validation" novalidate>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="time_offset">Time Offset (s)</label>
+                        <input type="text" class="form-control" id="time_offset" placeholder=""
+                            data-bind="value: general().time_offset" required>
+                        <div class="invalid-feedback">
+                            Valid first name is required.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="audio_volume">Audio Volume</label>
+                        <input type="range" min="0" max="21" class="custom-range" id="audio_volume" placeholder=""
+                            data-bind="value: general().audio_volume" required>
+                        <div class="invalid-feedback">
+                            Valid last name is required.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alarms -->
+
+                <div class="row">
+                    <h4 class="mb-3">Alarms</h4>
+                </div>
+                <div id="alarms" data-bind="foreach: alarms">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="alarm_name">Name</label>
+                            <input type="text" class="form-control" id="alarm_name" placeholder=""
+                                data-bind="value: name" required>
+                            <div class="invalid-feedback">
+                                Valid last name is required.
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="alarm_dow">Weekday</label>
+                            <select class="selectpicker"
+                                data-bind="options: $root.weekdays, selectedOptions: dow, optionsText: 'name', value: 'value'"
+                                placeholder="" required multiple="true">
+                            </select>
+                            <div class="invalid-feedback">
+                                Valid last name is required.
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="alarm_time">Time</label>
+                            <input type="time" class="form-control" id="alarm_time" data-bind="value: timeForm"
+                                placeholder="" required>
+                            <div class="invalid-feedback">
+                                Valid last name is required.
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="alarm_song">Song/Stream</label>
+                            <select class="custom-select d-block w-100" id="alarm_song"
+                                data-bind="options: $root.songs, value: file, optionsText: 'name'" placeholder=""
+                                required>
+                            </select>
+                            <div class="invalid-feedback">
+                                Valid last name is required.
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <label for="alarm_delete">Delete</label>
+                            <button class="btn btn-danger" type="button" data-bind="click: $root.removeAlarm"><svg
+                                    width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-trash-fill"
+                                    fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd"
+                                        d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0v-7z" />
+                                </svg></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        <button class="btn btn-primary" type="button" data-bind="click: addAlarm">+</button>
+                    </div>
+                </div>
+                <hr class="mb-4">
+                <button class="btn btn-success btn-lg btn-block" type="button" data-bind="click: save">Save
+                    Config</button>
+            </form>
+
+            <!-- Files -->
+
+            <div class="row">
+                <h4 class="mb-3">Songs / Streams</h4>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">URL</th>
+                        <th scope="col">Size</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="songs" data-bind="foreach: songs">
+                    <tr>
+                        <td data-bind="text: name"></td>
+                        <td data-bind="text: url"></td>
+                        <td data-bind="text: size"></td>
+                        <td><button class="btn btn-danger " type="button" data-bind="click: $root.removeSong"><svg
+                                    width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-trash-fill"
+                                    fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd"
+                                        d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0v-7z" />
+                                </svg></button>
+                            <button class="btn btn-success " type="button" data-bind="click: $root.playSong"><svg
+                                    width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-play-fill"
+                                    fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                                </svg></button>
+                            <button class="btn btn-primary " type="button" data-bind="click: $root.stopSong"><svg
+                                    width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-stop-fill"
+                                    fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z" />
+                                </svg></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalStream">
+                Add stream
+            </button>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSong">
+                Add song
+            </button>
+        </div>
+
+        <!-- new stream dialog -->
+        <div class="modal" tabindex="-1" role="dialog" id="modalStream">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add stream</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="col-md-12">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <label for="stream_name">Name</label>
+                                    <input type="text" class="form-control" id="stream_name" placeholder=""
+                                        data-bind="value: streamName" required>
+                                </div>
+                                <div class="col-md-12">
+                                    <label for="stream_url">URL</label>
+                                    <input type="text" class="form-control" id="stream_url" placeholder=""
+                                        data-bind="value: streamUrl" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" data-bind="click: addStream, enable: streamUrl != undefined">Add</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- upload new song dialog -->
+        <div class="modal" tabindex="-1" role="dialog" id="modalSong">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload song</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="col-md-12">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <label for="song_file">File</label>
+                                    <div class="custom-file">
+                                        <input type="file" class="custom-file-input" id="song_file" placeholder=""
+                                            data-bind="value: songFile">
+                                        <label class="custom-file-label" for="song_file">Choose file</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" data-bind="click: addSong">Add</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main><!-- /.container -->
+
+    <script src="/js/script.js"></script>
+</body>
+
+</html>

@@ -10,7 +10,7 @@
 class AlarmSettings {
     public:
         AlarmSettings();
-        AlarmSettings(String name, int dow, int hour, int minute, String file);
+        AlarmSettings(String name, int dow, int hour, int minute, String url);
         ~AlarmSettings();
 
         String toString();
@@ -27,7 +27,7 @@ class AlarmSettings {
         int dow;
         int hour;
         int minute;
-        String file;
+        String url;
 
     private:
         int tmToSec(const struct tm t);

@@ -19,4 +19,4 @@ do
 done
 
 # copy html
-cp www/*.html data/www/
+cat www/index.htm | gzip > data/www/index.htm.gz

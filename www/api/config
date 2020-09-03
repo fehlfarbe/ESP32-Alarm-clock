@@ -30,14 +30,14 @@
             "dow" : [0, 1, 2, 3, 4, 5],
             "hour" : 10,
             "minute" : 50,
-            "file" : "song3.mp3"
+            "file" : "http://www.wdr.de/wdrlive/media/einslive.m3u"
         },
         {
             "name" : "alarm3",
             "dow" : [0, 2],
             "hour" : 10,
             "minute" : 50,
-            "file" : "song3.mp3"
+            "file" : "http://www.wdr.de/wdrlive/media/einslive.m3u"
         }
     ]
 }

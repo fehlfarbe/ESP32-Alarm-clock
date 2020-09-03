@@ -29,6 +29,7 @@
 #define I2S_LRC 26
 
 #define BTN_PLAY 14
+#define BTN_WIFI_RESET 32
 #define LED_BUILTIN 5
 
 #define JSON_BUFFER 4096
@@ -41,8 +42,8 @@ uint32_t time_offset_s = 0;
 uint8_t audio_volume = 0;
 
 // alarms
-#define MAX_ALARMS 100
-AlarmSettings alarms[100];
+#define MAX_ALARMS 150
+AlarmSettings alarms[MAX_ALARMS];
 size_t alarms_size = 0;
 size_t alarms_next = 0;
 
@@ -63,18 +64,20 @@ AsyncWiFiManager wifiManager(&server, &dns);
 void loadSettings(fs::FS &fs);
 void nextAlarm();
 void printAlarms();
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels);
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
 time_t getNtpTime();
 void timerCallback();
 void printTime(struct tm);
 bool compareAlarm(AlarmSettings first, AlarmSettings second);
 bool checkPlayAlarm();
 
+bool readJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc, DeserializationError &error);
+bool writeJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc);
+
 void handleAPIConfigUpdate(AsyncWebServerRequest *request);
 void handleAPIConfig(AsyncWebServerRequest *request);
-void handleAPIFiles(AsyncWebServerRequest *request);
-void handleAPIFilesUpload(AsyncWebServerRequest *request);
-void handleAPIFilesDelete(AsyncWebServerRequest *request);
+void handleAPISongs(AsyncWebServerRequest *request);
+void handleAPIPlayback(AsyncWebServerRequest *request);
 
 // setup
 void setup()
@@ -82,29 +85,36 @@ void setup()
 
     // setup pins
     pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(BTN_WIFI_RESET, INPUT_PULLUP);
+    // ledcSetup(0, 5000, 8);
+    // ledcAttachPin(LED_BUILTIN, 0);
 
     // setup serial
     Serial.begin(115200);
+
+    // setup I2S audio
+    audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+    audio.setVolume(audio_volume); // 0...21
+    audio.stopSong();
 
     // Initialize LITTLEFS
     if (!LITTLEFS.begin())
     {
         Serial.println("An Error has occurred while mounting LITTLEFS");
-        return;
     }
 
     Serial.println("Files on flash:");
     listDir(LITTLEFS, "/", 5);
 
     // Initialize SD
-    if(!SD.begin()){
+    if (!SD.begin())
+    {
         Serial.println("Card Mount Failed");
-        return;
     }
     uint8_t cardType = SD.cardType();
-    if(cardType == CARD_NONE){
+    if (cardType == CARD_NONE)
+    {
         Serial.println("No SD card attached");
-        return;
     }
     Serial.println("Files on SD:");
     listDir(SD, "/", 5);
@@ -113,9 +123,20 @@ void setup()
     loadSettings(fsConfig);
 
     // connect WiFi
-    digitalWrite(LED_BUILTIN, HIGH);
-    wifiManager.autoConnect();
     digitalWrite(LED_BUILTIN, LOW);
+    if (digitalRead(BTN_WIFI_RESET) == LOW)
+    {
+        Serial.println("Reset WiFi setting...");
+        wifiManager.resetSettings();
+    }
+
+    wifiManager.setConfigPortalTimeout(60);
+    if (!wifiManager.autoConnect("ESP32Alarm", "alarmalarm", 2, 5000))
+    {
+        Serial.println("failed to connect, we should reset as see if it connects");
+    }
+
+    digitalWrite(LED_BUILTIN, HIGH);
 
     // setup mDNS
     char hostname[20];
@@ -142,10 +163,6 @@ void setup()
         Serial.println();
     }
 
-    // setup I2S audio
-    audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-    audio.setVolume(audio_volume); // 0...21
-
     // sort alarms by date
     Serial.println("Alarms before sort:");
     printAlarms();
@@ -159,13 +176,13 @@ void setup()
     server.begin();
     server.serveStatic("/", fsWWW, "/www/");
     // server.rewrite("/", "/index.hmtl");
-    server.serveStatic("/index.html", fsWWW, "/www/index.html");
-    server.serveStatic("/css/boostrap.min.css", fsWWW, "/www/css/boostrap.min.css.gz");
-    server.serveStatic("/css/style.css", fsWWW, "/www/css/style.css");
-    server.serveStatic("/js/bootstrap.min.js", fsWWW, "/www/js/bootstrap.min.js.gz");
-    server.serveStatic("/js/jquery.min.js", fsWWW, "/www/js/jquery.min.js.gz");
-    server.serveStatic("/js/knockout.js", fsWWW, "/www/js/knockout.js.gz");
-    server.serveStatic("/js/script.js", fsWWW, "/www/js/script.js");
+    // server.serveStatic("/index.htm", fsWWW, "/www/index.htm");
+    // server.serveStatic("/css/boostrap.min.css", fsWWW, "/www/css/boostrap.min.css.gz");
+    // server.serveStatic("/css/style.css", fsWWW, "/www/css/style.css.gz");
+    // server.serveStatic("/js/bootstrap.min.js", fsWWW, "/www/js/bootstrap.min.js.gz");
+    // server.serveStatic("/js/jquery.min.js", fsWWW, "/www/js/jquery.min.js.gz");
+    // server.serveStatic("/js/knockout.js", fsWWW, "/www/js/knockout.js.gz");
+    // server.serveStatic("/js/script.js", fsWWW, "/www/js/script.js.gz");
 
     server.on("/api/config", handleAPIConfig);
     server.on("/api/config/update", HTTP_POST, handleAPIConfigUpdate);
@@ -184,15 +201,18 @@ void setup()
                                                    WiFi.RSSI() + "\", "
                                                                  "\"flash_used\" : \"" +
                                                    LITTLEFS.usedBytes() + "\", "
-                                                                "\"sd_used\" : \"" +
+                                                                          "\"sd_used\" : \"" +
                                                    String((uint32_t)SD.usedBytes()) + "\", "
-                                                                        "\"cpu_freq\" : \"" +
+                                                                                      "\"cpu_freq\" : \"" +
                                                    ESP.getCpuFreqMHz() + "\"}");
     });
-    server.on("/api/files", handleAPIFiles);
-    server.on("/api/files/upload", HTTP_POST, handleAPIFilesUpload);
-    server.on("/api/files/delete", HTTP_POST, handleAPIFilesDelete);
-    
+    server.on("/api/songs", handleAPISongs);
+    server.on("/api/songs/update", HTTP_POST, handleAPISongs);
+    // server.on("/api/songs/upload", HTTP_POST, handleAPISongsUpload);
+    // server.on("/api/songs/delete", HTTP_POST, handleAPISongsDelete);
+    server.on("/api/playback", HTTP_POST, handleAPIPlayback);
+    // server.on("/api/volume", HTTP_POST, handleAPIVolume);
+
     // setup alarm
     // ToDo: for debug set alarm to current time + 10s
     // if (getLocalTime(&timeinfo)){
@@ -255,7 +275,8 @@ void loadSettings(fs::FS &fs)
             int hour = (int)a["hour"];
             int min = (int)a["minute"];
             JsonArray dow = a["dow"];
-            for (auto d : dow){
+            for (auto d : dow)
+            {
                 int day = (int)d;
                 Serial.printf("Alarm %s %s %02d:%02d %s\n", name, dowName(day).c_str(), hour, min, file);
                 alarms[i++] = AlarmSettings(name, day, hour, min, file);
@@ -330,7 +351,7 @@ bool checkPlayAlarm()
     if (alarms[alarms_next] < timeinfo && alarms[alarms_next].differenceSec(timeinfo) < 10)
     {
         Serial.println("Playing Alarm " + alarms[alarms_next].toString());
-        audio.connecttoFS(fsSongs, alarms[alarms_next].file);
+        audio.connecttoFS(fsSongs, alarms[alarms_next].url);
         // select next alarm
         alarms_next = (alarms_next + 1) % alarms_size;
         return true;
@@ -357,29 +378,36 @@ void printAlarms()
  * Print all files on LITTLEFS for debug reasons :)
  *
  *************************************/
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels)
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 {
     Serial.printf("Listing directory: %s\n", dirname);
 
     File root = fs.open(dirname);
-    if(!root){
+    if (!root)
+    {
         Serial.println("Failed to open directory");
         return;
     }
-    if(!root.isDirectory()){
+    if (!root.isDirectory())
+    {
         Serial.println("Not a directory");
         return;
     }
 
     File file = root.openNextFile();
-    while(file){
-        if(file.isDirectory()){
+    while (file)
+    {
+        if (file.isDirectory())
+        {
             Serial.print("  DIR : ");
             Serial.println(file.name());
-            if(levels){
-                listDir(fs, file.name(), levels -1);
+            if (levels)
+            {
+                listDir(fs, file.name(), levels - 1);
             }
-        } else {
+        }
+        else
+        {
             Serial.print("  FILE: ");
             Serial.print(file.name());
             Serial.print("  SIZE: ");
@@ -433,6 +461,40 @@ void handleAPIConfigUpdate(AsyncWebServerRequest *request)
     // request->send(200, "text/html", "saved");
 }
 
+bool readJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc, DeserializationError &error)
+{
+    // add webstreams from streams
+    File streamsFile = fs.open(file, FILE_READ);
+    String json = streamsFile.readString();
+    streamsFile.close();
+    Serial.println(json);
+    error = deserializeJson(doc, json);
+    if (error)
+    {
+        Serial.println("----- parseObject() for streams.json failed -----");
+        Serial.println(error.c_str());
+        return false;
+    }
+    return true;
+}
+
+bool writeJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc)
+{
+    // open file
+    File f = fsConfig.open(file, FILE_WRITE);
+
+    // Serialize JSON to file
+    if (serializeJson(doc, f) == 0)
+    {
+        Serial.println(F("Failed to write to file"));
+        return false;
+    }
+
+    // Close the file
+    f.close();
+    return true;
+}
+
 /**
  * @brief returns the config (alarms, general config, ...)
  * 
@@ -480,24 +542,118 @@ void handleAPIConfig(AsyncWebServerRequest *request)
 }
 
 /**
- * @brief return list of songs on LITTLEFS/SD
+ * @brief return list of songs on LITTLEFS/SD and webstreams in streams.json
  * 
  */
-void handleAPIFiles(AsyncWebServerRequest *request)
+void handleAPISongs(AsyncWebServerRequest *request)
 {
     // if method is POST and param exists
     if (request->method() == HTTP_POST && request->params())
     {
-        if(request->getParam(0)->isFile()){
+        Serial.println("POST");
+        if (request->getParam(0)->isFile())
+        {
             Serial.println("ToDo: file upload");
-        } else if(request->getParam(0)->isPost()){
-            Serial.println("TODO: File delete " + request->getParam(0)->value());
-            
+        }
+        else if (request->getParam(0)->isPost())
+        {
+            // create JSON buffer
+            DynamicJsonDocument req(JSON_BUFFER);
+            DeserializationError error = deserializeJson(req, request->getParam(0)->value());
+            if (error)
+            {
+                Serial.println("----- parseObject() failed -----");
+                Serial.println(error.c_str());
+                request->send(500, "application/json", "{\"error\" : \"cannot parse JSON\"");
+                return;
+            }
+
+            String action = req["action"];
+            Serial.println(request->getParam(0)->value());
+            Serial.println("Got Action " + action);
+            Serial.println("JSON request:");
+            serializeJson(req, Serial);
+
+            if (action == "delete")
+            {
+                String url = req["song"]["url"];
+                Serial.println("Delete song " + url);
+                // delete http streams from streams.json or delete file from SD card
+                if (url.startsWith("http://"))
+                {
+                    // read current streams
+                    DynamicJsonDocument doc(JSON_BUFFER);
+                    DeserializationError error;
+                    if (!readJSONFile(fsSongs, "/streams.json", doc, error))
+                    {
+                        Serial.println("----- parseObject() for streams.json failed -----");
+                        Serial.println(error.c_str());
+                        request->send(500, "application/json", "{\"error\" : \"cannot read streams\"");
+                        return;
+                    }
+                    auto streams = doc.to<JsonArray>();
+                    for (size_t i = 0; i < streams.size(); i++)
+                    {
+                        if (streams[i]["url"] == url)
+                        {
+                            streams.remove(i);
+                            Serial.println("Removed");
+                            break;
+                        }
+                    }
+                    if (!writeJSONFile(fsSongs, "/streams.json", doc))
+                    {
+                        request->send(500, "application/json", "{\"error\" : \"cannot save streams\"");
+                        return;
+                    }
+                }
+                else if (!fsSongs.remove(url))
+                {
+                    request->send(500, "application/json", "{\"error\" : \"cannot remove song\"");
+                }
+            }
+            else if (action == "addStream")
+            {
+                // add new stream
+                // read current streams
+                DynamicJsonDocument doc(JSON_BUFFER);
+                JsonArray streams = doc.to<JsonArray>();
+                DeserializationError error;
+                if (!readJSONFile(fsSongs, "/streams.json", doc, error))
+                {
+                    Serial.println("----- parseObject() for streams.json failed -----");
+                    Serial.println(error.c_str());
+                    request->send(500, "application/json", "{\"error\" : \"cannot read streams\"");
+                    return;
+                }
+                // add new stream
+                // todo: look for sanity ;)
+                streams.add(req["stream"]);
+
+                // write back to streams
+                if (!writeJSONFile(fsSongs, "/streams.json", doc))
+                {
+                    request->send(500, "application/json", "{\"error\" : \"cannot save streams\"");
+                    return;
+                }
+            }
+            else if (action == "addSong")
+            {
+                // upload new song to sd card
+                Serial.println("ToDo: upload song to sd card");
+            }
         }
     }
-    // create JSON buffer
+    // create JSON buffer and read streams
     DynamicJsonDocument doc(JSON_BUFFER);
     JsonArray array = doc.to<JsonArray>();
+    DeserializationError error;
+    if (!readJSONFile(fsSongs, "/streams.json", doc, error))
+    {
+        Serial.println("----- parseObject() for streams.json failed -----");
+        Serial.println(error.c_str());
+        request->send(500, "application/json", "{\"error\" : \"cannot read streams\"");
+    }
 
     // iterate through songs directory
     File root = fsSongs.open("/songs");
@@ -506,35 +662,104 @@ void handleAPIFiles(AsyncWebServerRequest *request)
     {
         Serial.println(file.name());
         auto f = array.createNestedObject();
-        f["name"] = String(file.name()).substring(String(file.name()).lastIndexOf("/")+1);
+        f["name"] = String(file.name()).substring(String(file.name()).lastIndexOf("/") + 1);
+        f["url"] = String(file.name());
         f["size"] = file.size();
         file = root.openNextFile();
     }
 
     // send JSON
     AsyncResponseStream *response = request->beginResponseStream("application/json");
-    serializeJson(array, Serial);
-    serializeJson(array, *response);
+    serializeJson(doc, Serial);
+    serializeJson(doc, *response);
     request->send(response);
 }
 
-/**
- * @brief handles upload of new songs
- * 
- */
-void handleAPIFilesUpload(AsyncWebServerRequest *request)
+void handleAPIPlayback(AsyncWebServerRequest *request)
 {
-    Serial.println("TODO: File upload");
+    // if method is POST and param exists
+    if (request->method() == HTTP_POST && request->params())
+    {
+        if (request->getParam(0)->isPost())
+        {
+            Serial.println(request->getParam(0)->value());
+            // create JSON buffer
+            DynamicJsonDocument doc(512);
+            DeserializationError error = deserializeJson(doc, request->getParam(0)->value());
+            if (error)
+            {
+                Serial.println("----- parseObject() failed -----");
+                Serial.println(error.c_str());
+                request->send(500, "application/json", "{\"error\" : \"cannot parse JSON\"");
+                return;
+            }
+
+            String action = doc["action"];
+
+            if (action == "play")
+            {
+                String url = doc["url"];
+                Serial.printf("Playing song %s\n", url.c_str());
+                if (url.startsWith("http"))
+                {
+                    audio.connecttohost(url);
+                }
+                else
+                {
+                    File file = fsSongs.open(url, FILE_READ);
+                    if (!file)
+                    {
+                        request->send(500, "application/json", "{\"error\" : \"cannot open file\"");
+                        file.close();
+                        return;
+                    }
+                    audio.connecttoFS(fsSongs, url);
+                }
+            }
+            else if (action == "stop")
+            {
+                audio.stopSong();
+            }
+            else if (action == "pause")
+            {
+                audio.pauseResume();
+            }
+            else if (action == "volume")
+            {
+                int volume = doc["volume"];
+                audio.setVolume(volume);
+            }
+        }
+    }
+
+    // create JSON respons
+    DynamicJsonDocument state(JSON_BUFFER);
+    state["volume"] = audio.getVolume();
+    state["position"] = audio.getFilePos();
+    state["current"] = audio.getAudioCurrentTime();
+    state["duration"] = audio.getAudioFileDuration();
+    state["playing"] = audio.isRunning();
+
+    // send JSON response
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    serializeJson(state, Serial);
+    serializeJson(state, *response);
+    request->send(response);
 }
 
-/**
- * @brief delete song
- * 
- */
-void handleAPIFilesDelete(AsyncWebServerRequest *request)
-{
-    Serial.println("TODO: File delete " + request->getParam(0)->value());
-}
+// void handleAPIVolume(AsyncWebServerRequest *request){
+//     // if method is POST and param exists
+//     if (request->method() == HTTP_POST && request->params())
+//     {
+//         if (request->getParam(0)->isPost())
+//         {
+//             int param = request->getParam(0)->value().toInt();
+//             audio.setVolume(param);
+//         }
+//     }
+
+//     request->send(200, "application/text", String(audio.getVolume()));
+// }
 
 /**************************************
  *
@@ -543,13 +768,19 @@ void handleAPIFilesDelete(AsyncWebServerRequest *request)
  *************************************/
 time_t getNtpTime()
 {
+    struct tm timeinfo;
+    if (!WiFi.isConnected())
+    {
+        Serial.println("WiFi not connected, cannot config time!");
+        return mktime(&timeinfo) + time_offset_s;
+    }
     //configTime(-3600, -3600, "69.10.161.7");
 
     Serial.printf("Update time with GMT+%02d and DST: %d\n",
                   time_offset_s / 3600, 0);
 
     configTime(0, time_offset_s, "69.10.161.7");
-    struct tm timeinfo;
+
     if (!getLocalTime(&timeinfo))
     {
         Serial.println("Failed to obtain time");

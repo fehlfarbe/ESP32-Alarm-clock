@@ -1,0 +1,6 @@
+[
+    {"name":"song1.mp3","size":1308840,"url":"song1.mp3"},
+    {"name":"song2.mp3","size":23,"url":"song2.mp3"},
+    {"name":"Stream1","url":"http://mp3.ffh.de/radioffh/hqlivestream.mp3"},
+    {"name":"WDR 1Live","url":"http://www.wdr.de/wdrlive/media/einslive.m3u"}
+]
