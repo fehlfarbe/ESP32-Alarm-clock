@@ -114,7 +114,8 @@ function SettingsViewModel() {
 
     // Operations
     self.addAlarm = function () {
-        self.alarms.push(new Alarm("unnamed", self.weekdays[0], 0, 0, self.songs[0]));
+        self.alarms.push(new Alarm("new Alarm", [self.weekdays[0]], 0, 0, self.songs[0]));
+        $('.selectpicker').selectpicker();
     }
     self.removeAlarm = function (alarm) { self.alarms.remove(alarm) }
 
@@ -240,9 +241,43 @@ function SettingsViewModel() {
     self.streamName = ko.observable();
     self.streamUrl = ko.observable();
     self.songFile = ko.observable();
+    self.songProgress = ko.observable(0);
 
     self.addSong = function () {
         console.log(self.songFile());
+        console.log($("#song_file")[0]);
+        var formData = new FormData();
+        // formData.append($("#song_file")[0].files[0].name, $("#song_file")[0].files[0]);
+        formData.append('file', $("#song_file")[0].files[0]);
+
+        $.ajax({
+            type: 'POST',
+            url: "/upload",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (resp) {
+                console.log("done", resp);
+                console.log("TODO: return new song url and append to list");
+                // self.songs.push(new Song(self.streamName(), self.streamUrl()));
+                $('#modalSong').modal('hide');
+                self.songProgress(0);
+            },
+            error: function (e) {
+                console.log("Error: ", e);
+                alert("Error: " + e.responseText);
+            },
+            xhr: function() {
+                var xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener("progress", function(evt) {
+                    if (evt.lengthComputable) {
+                        var percentComplete = (evt.loaded / evt.total) * 100;
+                        self.songProgress(percentComplete);
+                    }
+               }, false);
+               return xhr;
+            },
+        });
     }
 
     self.addStream = function () {

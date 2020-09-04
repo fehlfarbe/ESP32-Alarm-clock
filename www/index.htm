@@ -257,7 +257,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-success" data-bind="click: addStream, enable: streamUrl != undefined">Add</button>
+                        <button type="button" class="btn btn-success"
+                            data-bind="click: addStream, enable: streamUrl != undefined">Add</button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     </div>
                 </div>
@@ -284,6 +285,12 @@
                                             data-bind="value: songFile">
                                         <label class="custom-file-label" for="song_file">Choose file</label>
                                     </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <progress class="progress-bar" style="width: 100%;" id="song_progress" value="0" max="100"
+                                        data-bind="value: songProgress"></progress>
                                 </div>
                             </div>
                         </div>

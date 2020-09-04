@@ -77,6 +77,7 @@ bool writeJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc);
 void handleAPIConfigUpdate(AsyncWebServerRequest *request);
 void handleAPIConfig(AsyncWebServerRequest *request);
 void handleAPISongs(AsyncWebServerRequest *request);
+void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
 void handleAPIPlayback(AsyncWebServerRequest *request);
 
 // setup
@@ -208,10 +209,22 @@ void setup()
     });
     server.on("/api/songs", handleAPISongs);
     server.on("/api/songs/update", HTTP_POST, handleAPISongs);
+    server.on(
+        "/api/songs/upload", HTTP_POST, [](AsyncWebServerRequest *request) {
+            request->send(200);
+        },
+        handleAPISongsUpload);
+    // upload a file to /upload
+    server.on(
+        "/upload", HTTP_POST, [](AsyncWebServerRequest *request) {
+            request->send(200);
+        },
+        handleAPISongsUpload);
     // server.on("/api/songs/upload", HTTP_POST, handleAPISongsUpload);
     // server.on("/api/songs/delete", HTTP_POST, handleAPISongsDelete);
     server.on("/api/playback", HTTP_POST, handleAPIPlayback);
     // server.on("/api/volume", HTTP_POST, handleAPIVolume);
+    // server.onFileUpload(handleAPISongsUpload);
 
     // setup alarm
     // ToDo: for debug set alarm to current time + 10s
@@ -351,6 +364,7 @@ bool checkPlayAlarm()
     if (alarms[alarms_next] < timeinfo && alarms[alarms_next].differenceSec(timeinfo) < 10)
     {
         Serial.println("Playing Alarm " + alarms[alarms_next].toString());
+        audio.setVolume(audio_volume);
         audio.connecttoFS(fsSongs, alarms[alarms_next].url);
         // select next alarm
         alarms_next = (alarms_next + 1) % alarms_size;
@@ -550,12 +564,8 @@ void handleAPISongs(AsyncWebServerRequest *request)
     // if method is POST and param exists
     if (request->method() == HTTP_POST && request->params())
     {
-        Serial.println("POST");
-        if (request->getParam(0)->isFile())
-        {
-            Serial.println("ToDo: file upload");
-        }
-        else if (request->getParam(0)->isPost())
+        Serial.printf("POST with %d params\n", request->params());
+        if (request->getParam(0)->isPost())
         {
             // create JSON buffer
             DynamicJsonDocument req(JSON_BUFFER);
@@ -626,9 +636,17 @@ void handleAPISongs(AsyncWebServerRequest *request)
                     request->send(500, "application/json", "{\"error\" : \"cannot read streams\"");
                     return;
                 }
+                // copy only necessary fields
+                JsonObject stream = streams.createNestedObject();
+                stream["name"] = req["stream"]["name"];
+                stream["url"] = req["stream"]["url"];
+
                 // add new stream
-                // todo: look for sanity ;)
-                streams.add(req["stream"]);
+                // streams.add(stream);
+
+                // Serial.println();
+                // serializeJson(streams, Serial);
+                // Serial.println();
 
                 // write back to streams
                 if (!writeJSONFile(fsSongs, "/streams.json", doc))
@@ -673,6 +691,91 @@ void handleAPISongs(AsyncWebServerRequest *request)
     serializeJson(doc, Serial);
     serializeJson(doc, *response);
     request->send(response);
+}
+
+void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+    Serial.printf("Uploading %s (%d bytes written)", filename.c_str(), index);
+
+    String path = "/songs/" + filename;
+
+    // open file
+    if (!index)
+    {
+        Serial.printf("Open file %s\n", filename.c_str());
+        if(fsUploadFile){
+            Serial.println("File is already opened!");
+            request->send(500, "text/plain", "file already opened");
+            return;
+        } else {
+            fsUploadFile = fsSongs.open(path, FILE_WRITE);
+        }
+    }
+
+    // write data
+    for (size_t i = 0; i < len; i++)
+    {
+        fsUploadFile.write(data[i]);
+    }
+
+    if (final)
+    {
+        Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index + len);
+        fsUploadFile.close();
+        request->send(202, "text/plain", "ok");
+    }
+
+
+// if (request->getParam(0)->isFile())
+//         {
+
+//             Serial.println("Wrong upload function :(");
+//             Serial.println(request->getParam(0)->name());
+//             Serial.println(request->getParam(0)->size());
+
+//             // write file to SD
+//             String path = "/songs/" + request->getParam(0)->name();
+//             File file = fsSongs.open(path, FILE_WRITE);
+//             if (!file)
+//             {
+//                 Serial.printf("Wiriting to %s failed!\n", path.c_str());
+//                 request->send(500, "application/json", "{\"error\" : \"cannot write file to SD\"");
+//                 return;
+//             }
+//             size_t len = file.write((uint8_t *)request->getParam(0)->value().c_str(), request->getParam(0)->size());
+//             Serial.printf("Wrote %d bytes to %s", len, file.name());
+//         }
+//         else 
+
+
+
+    // if method is POST and param exists
+    // if (request->method() == HTTP_POST && request->params())
+    // {
+    //     Serial.printf("POST with %d params\n", request->params());
+    //     if (request->getParam(0)->isFile())
+    //     {
+
+    //         Serial.println("ToDo: file upload");
+    //         Serial.println(request->getParam(0)->name());
+    //         Serial.println(filename);
+    //         Serial.println(final);
+    //         Serial.println(len);
+    //         Serial.println(index);
+
+    //         //     // write file to SD
+    //         //     String path = "/songs/" + request->getParam(0)->name();
+    //         //     File file = fsSongs.open(path, FILE_WRITE);
+    //         //     if(!file){
+    //         //         Serial.printf("Wiriting to %s failed!\n", path.c_str());
+    //         //         request->send(500, "application/json", "{\"error\" : \"cannot write file to SD\"");
+    //         //         return;
+    //         //     }
+    //         //     size_t len = file.write((uint8_t*)request->getParam(0)->value().c_str(), request->getParam(0)->size());
+    //         //     Serial.printf("Wrote %d bytes to %s", len, file.name());
+    //         // }
+    //     }
+    // }
 }
 
 void handleAPIPlayback(AsyncWebServerRequest *request)
