@@ -2,8 +2,6 @@
 #include <Esp.h>
 #include <WiFi.h>
 #include <DNSServer.h>
-// #include <WebServer.h>
-// #include <WiFiManager.h>
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <HTTPClient.h>
@@ -19,17 +17,18 @@
 #include <LITTLEFS.h>
 #include <SD.h>
 #include <SPI.h>
+#include <Int64String.h>
 
 #include "AlarmSettings.h"
 #include "utils.h"
 
 // Digital I/O used
 #define I2S_DOUT 25
-#define I2S_BCLK 27
-#define I2S_LRC 26
+#define I2S_BCLK 4
+#define I2S_LRC 27
 
 #define BTN_PLAY 14
-#define BTN_WIFI_RESET 32
+#define BTN_WIFI_RESET 23
 #define LED_BUILTIN 5
 
 #define JSON_BUFFER 4096
@@ -79,6 +78,7 @@ void handleAPIConfig(AsyncWebServerRequest *request);
 void handleAPISongs(AsyncWebServerRequest *request);
 void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
 void handleAPIPlayback(AsyncWebServerRequest *request);
+void handleAPIState(AsyncWebServerRequest *request);
 
 // setup
 void setup()
@@ -125,19 +125,21 @@ void setup()
 
     // connect WiFi
     digitalWrite(LED_BUILTIN, LOW);
-    if (digitalRead(BTN_WIFI_RESET) == LOW)
-    {
-        Serial.println("Reset WiFi setting...");
-        wifiManager.resetSettings();
-    }
-
-    wifiManager.setConfigPortalTimeout(60);
-    if (!wifiManager.autoConnect("ESP32Alarm", "alarmalarm", 2, 5000))
+    // if (digitalRead(BTN_WIFI_RESET) == LOW)
+    // {
+    //     Serial.println("Reset WiFi setting...");
+    //     wifiManager.resetSettings();
+    // }
+    wifiManager.setConnectTimeout(10);
+    if (!wifiManager.autoConnect())
     {
         Serial.println("failed to connect, we should reset as see if it connects");
     }
 
     digitalWrite(LED_BUILTIN, HIGH);
+
+    // print network settings
+    Serial.println(WiFi.localIP().toString());
 
     // setup mDNS
     char hostname[20];
@@ -165,8 +167,6 @@ void setup()
     }
 
     // sort alarms by date
-    Serial.println("Alarms before sort:");
-    printAlarms();
     sortArray(alarms, alarms_size, compareAlarm);
     Serial.println("Alarms after sort:");
     printAlarms();
@@ -176,55 +176,17 @@ void setup()
     // HTTP Server
     server.begin();
     server.serveStatic("/", fsWWW, "/www/");
-    // server.rewrite("/", "/index.hmtl");
-    // server.serveStatic("/index.htm", fsWWW, "/www/index.htm");
-    // server.serveStatic("/css/boostrap.min.css", fsWWW, "/www/css/boostrap.min.css.gz");
-    // server.serveStatic("/css/style.css", fsWWW, "/www/css/style.css.gz");
-    // server.serveStatic("/js/bootstrap.min.js", fsWWW, "/www/js/bootstrap.min.js.gz");
-    // server.serveStatic("/js/jquery.min.js", fsWWW, "/www/js/jquery.min.js.gz");
-    // server.serveStatic("/js/knockout.js", fsWWW, "/www/js/knockout.js.gz");
-    // server.serveStatic("/js/script.js", fsWWW, "/www/js/script.js.gz");
-
     server.on("/api/config", handleAPIConfig);
     server.on("/api/config/update", HTTP_POST, handleAPIConfigUpdate);
-    server.on("/api/time", [](AsyncWebServerRequest *request) {
-        // return current device time
-        String time = String(now());
-        request->send(200, "application/json", "{\"time\": \"" + time + "\"}");
-    });
-    server.on("/api/stats", [](AsyncWebServerRequest *request) {
-        request->send(200, "application/json", "{\"free_heap\": \"" + String(ESP.getFreeHeap()) + "\", "
-                                                                                                  "\"chip_rev\" : \"" +
-                                                   ESP.getChipRevision() + "\", "
-                                                                           "\"sdk\" : \"" +
-                                                   ESP.getSdkVersion() + "\", "
-                                                                         "\"wifi\" : \"" +
-                                                   WiFi.RSSI() + "\", "
-                                                                 "\"flash_used\" : \"" +
-                                                   LITTLEFS.usedBytes() + "\", "
-                                                                          "\"sd_used\" : \"" +
-                                                   String((uint32_t)SD.usedBytes()) + "\", "
-                                                                                      "\"cpu_freq\" : \"" +
-                                                   ESP.getCpuFreqMHz() + "\"}");
-    });
+    server.on("/api/state", handleAPIState);
     server.on("/api/songs", handleAPISongs);
     server.on("/api/songs/update", HTTP_POST, handleAPISongs);
-    server.on(
-        "/api/songs/upload", HTTP_POST, [](AsyncWebServerRequest *request) {
-            request->send(200);
-        },
-        handleAPISongsUpload);
-    // upload a file to /upload
     server.on(
         "/upload", HTTP_POST, [](AsyncWebServerRequest *request) {
             request->send(200);
         },
         handleAPISongsUpload);
-    // server.on("/api/songs/upload", HTTP_POST, handleAPISongsUpload);
-    // server.on("/api/songs/delete", HTTP_POST, handleAPISongsDelete);
-    server.on("/api/playback", HTTP_POST, handleAPIPlayback);
-    // server.on("/api/volume", HTTP_POST, handleAPIVolume);
-    // server.onFileUpload(handleAPISongsUpload);
+    server.on("/api/playback", handleAPIPlayback);
 
     // setup alarm
     // ToDo: for debug set alarm to current time + 10s
@@ -238,6 +200,7 @@ void setup()
     //    audio.connecttoFS(SD, "test.wav");
     // audio.connecttoFS(LITTLEFS, "/songs/song1.mp3");
     //    audio.connecttohost("http://www.wdr.de/wdrlive/media/einslive.m3u");
+    //    audio.setVolume(15);
     //    audio.connecttohost("http://macslons-irish-pub-radio.com/media.asx");
     //    audio.connecttohost("http://mp3.ffh.de/radioffh/hqlivestream.aac"); //  128k aac
     //   audio.connecttohost("http://mp3.ffh.de/radioffh/hqlivestream.mp3"); //  128k mp3
@@ -695,7 +658,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
 
 void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
-    Serial.printf("Uploading %s (%d bytes written)", filename.c_str(), index);
+    Serial.printf("Uploading %s (%u bytes written)\n", filename.c_str(), index);
 
     String path = "/songs/" + filename;
 
@@ -835,7 +798,7 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
         }
     }
 
-    // create JSON respons
+    // create JSON response
     DynamicJsonDocument state(JSON_BUFFER);
     state["volume"] = audio.getVolume();
     state["position"] = audio.getFilePos();
@@ -850,6 +813,29 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
     request->send(response);
 }
 
+
+void handleAPIState(AsyncWebServerRequest *request){
+    
+    // create JSON response
+    DynamicJsonDocument doc(JSON_BUFFER);
+    doc["heap_free"] = ESP.getFreeHeap();
+    doc["heap_size"] = ESP.getHeapSize();
+    doc["chip_rev"] = ESP.getChipRevision();
+    doc["sdk"] = ESP.getSdkVersion();
+    doc["wifi"] = WiFi.RSSI();
+    doc["flash_used"] = LITTLEFS.usedBytes();
+    doc["flash_total"] = LITTLEFS.totalBytes();
+    doc["sd_used"] = int64String(SD.usedBytes());
+    doc["sd_total"] = int64String(SD.totalBytes());
+    doc["cpu_frequ"] = ESP.getCpuFreqMHz();
+    doc["alarm_next"] = alarms[alarms_next].toString();
+
+    // send JSON response
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    serializeJson(doc, Serial);
+    serializeJson(doc, *response);
+    request->send(response);
+}
 // void handleAPIVolume(AsyncWebServerRequest *request){
 //     // if method is POST and param exists
 //     if (request->method() == HTTP_POST && request->params())

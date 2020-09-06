@@ -37,6 +37,14 @@ function Song(name, url, size) {
     self.size = ko.observable(size);
 }
 
+function Playback(song, playing, position, volume) {
+    var self = this;
+    self.song = ko.observable(song);
+    self.playing = ko.observable(playing);
+    self.position = ko.observable(position);
+    self.volume = ko.observable(volume);
+}
+
 function playbackCommand(req) {
     // return $.ajax({
     //     url: "/api/playback",
@@ -109,8 +117,17 @@ function SettingsViewModel() {
         $('.selectpicker').selectpicker();
     });
 
-    // Editable data
-    self.alarms = ko.observableArray(self.alarmObjects);
+    // playback
+    self.playback = ko.observable(new Playback(null, false, 0, 0));
+    self.playbackUpdate = function () {
+        $.getJSON("/api/playback", function (data) {
+            // playback
+            self.playback.name = null;
+            self.playback.playing = data.playing;
+            self.playback.position = data.current;
+            self.playback.volume = data.volume;
+        })
+    };
 
     // Operations
     self.addAlarm = function () {
@@ -221,7 +238,7 @@ function SettingsViewModel() {
             });
     }
 
-    // Audio volume
+    // Playback
     self.selectedPlayback = ko.observable();
     self.volume = ko.observable(10);
     self.volume.subscribe(function (value) {
@@ -267,15 +284,15 @@ function SettingsViewModel() {
                 console.log("Error: ", e);
                 alert("Error: " + e.responseText);
             },
-            xhr: function() {
+            xhr: function () {
                 var xhr = new window.XMLHttpRequest();
-                xhr.upload.addEventListener("progress", function(evt) {
+                xhr.upload.addEventListener("progress", function (evt) {
                     if (evt.lengthComputable) {
                         var percentComplete = (evt.loaded / evt.total) * 100;
                         self.songProgress(percentComplete);
                     }
-               }, false);
-               return xhr;
+                }, false);
+                return xhr;
             },
         });
     }
@@ -306,4 +323,7 @@ function SettingsViewModel() {
     }
 }
 
-ko.applyBindings(new SettingsViewModel());
+var model = new SettingsViewModel();
+// window.setInterval(model.playbackUpdate, 1000);
+model.playbackUpdate();
+ko.applyBindings(model);
