@@ -18,6 +18,7 @@
 #include <SD.h>
 #include <SPI.h>
 #include <Int64String.h>
+#include <TM1637Display.h>
 
 #include "AlarmSettings.h"
 #include "utils.h"
@@ -30,6 +31,10 @@
 #define BTN_PLAY 14
 #define BTN_WIFI_RESET 23
 #define LED_BUILTIN 5
+
+// I2C
+#define CLK 22
+#define DIO 21
 
 #define JSON_BUFFER 4096
 
@@ -59,6 +64,9 @@ File fsUploadFile;
 // WiFi
 AsyncWiFiManager wifiManager(&server, &dns);
 
+// Display
+TM1637Display display(CLK, DIO);
+
 // function declarations
 void loadSettings(fs::FS &fs);
 void nextAlarm();
@@ -69,11 +77,12 @@ void timerCallback();
 void printTime(struct tm);
 bool compareAlarm(AlarmSettings first, AlarmSettings second);
 bool checkPlayAlarm();
+void showDisplay(DisplayState state);
 
 bool readJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc, DeserializationError &error);
 bool writeJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc);
 
-void handleAPIConfigUpdate(AsyncWebServerRequest *request);
+// void handleAPIConfigUpdate(AsyncWebServerRequest *request);
 void handleAPIConfig(AsyncWebServerRequest *request);
 void handleAPISongs(AsyncWebServerRequest *request);
 void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
@@ -97,6 +106,9 @@ void setup()
     audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
     audio.setVolume(audio_volume); // 0...21
     audio.stopSong();
+
+    // setup display
+    display.setBrightness(7, true);
 
     // Initialize LITTLEFS
     if (!LITTLEFS.begin())
@@ -130,6 +142,7 @@ void setup()
     //     Serial.println("Reset WiFi setting...");
     //     wifiManager.resetSettings();
     // }
+    showDisplay(DisplayState::WIFI_CONNECT);
     wifiManager.setConnectTimeout(10);
     if (!wifiManager.autoConnect())
     {
@@ -155,6 +168,7 @@ void setup()
     }
 
     // sync time
+    showDisplay(DisplayState::SYNC);
     setSyncProvider(getNtpTime);
 
     // print current time
@@ -177,7 +191,7 @@ void setup()
     server.begin();
     server.serveStatic("/", fsWWW, "/www/");
     server.on("/api/config", handleAPIConfig);
-    server.on("/api/config/update", HTTP_POST, handleAPIConfigUpdate);
+    // server.on("/api/config/update", HTTP_POST, handleAPIConfigUpdate);
     server.on("/api/state", handleAPIState);
     server.on("/api/songs", handleAPISongs);
     server.on("/api/songs/update", HTTP_POST, handleAPISongs);
@@ -187,13 +201,6 @@ void setup()
         },
         handleAPISongsUpload);
     server.on("/api/playback", handleAPIPlayback);
-
-    // setup alarm
-    // ToDo: for debug set alarm to current time + 10s
-    // if (getLocalTime(&timeinfo)){
-    //     Serial.printf("Setting alarm to %02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec+8);
-    //     Alarm.alarmRepeat(timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec+10, timerCallback);
-    // }
 
     // open audiofile
     // audio.connecttoFS(LITTLEFS, "/song.mp3");
@@ -213,12 +220,15 @@ void loop()
     // check for alarm and play
     checkPlayAlarm();
     audio.loop();
+
+    // update display time
+    showDisplay(DisplayState::TIME);
 }
 
 /**
- * @brief load settings an initialize alarms
+ * @brief load settings an initialize alarms from /config.json
  * 
- * @param fs FileSystem
+ * @param fs FileSystem (LITTLEFS, SPIFFS, SD; ...)
  */
 void loadSettings(fs::FS &fs)
 {
@@ -337,6 +347,55 @@ bool checkPlayAlarm()
     return false;
 }
 
+/**
+ * @brief Updates TM1637 display
+ * 
+ * @param state 
+ */
+void showDisplay(DisplayState state)
+{
+    struct tm timeinfo;
+    const uint8_t sync[] = {
+        SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
+        SEG_F | SEG_G | SEG_B | SEG_C,         // Y
+        SEG_E | SEG_G | SEG_C,                 // n
+        SEG_E | SEG_G | SEG_D                  // c
+    };
+    const uint8_t conn[] = {
+        SEG_E | SEG_G | SEG_D,         // c
+        SEG_E | SEG_G | SEG_D | SEG_C, // o
+        SEG_E | SEG_G | SEG_C,         // n
+        SEG_E | SEG_G | SEG_C          // n
+    };
+
+    switch (state)
+    {
+    case DisplayState::WIFI_CONNECT:
+        display.setSegments(conn);
+        break;
+    case DisplayState::WIFI_CONNECTED:
+        break;
+    case DisplayState::WIFI_PORTAL:
+        break;
+    case DisplayState::SYNC:
+        display.setSegments(sync);
+        break;
+    case DisplayState::TIME:
+        if (!getLocalTime(&timeinfo))
+        {
+            Serial.println("Failed to obtain time");
+            display.showNumberDec(0, true);
+        }
+        else
+        {
+            display.showNumberDecEx(timeinfo.tm_hour * 100 + timeinfo.tm_min, 0b01000000, true);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
 /**************************************
  *
  * Print all falarms for debug reasons :)
@@ -395,49 +454,15 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 }
 
 /**
- * @brief updates the config
+ * @brief Reads JSON file from filesystem
  * 
+ * @param fs  source filesystem (SPIFFS, LITTLEFS, SD, ...)
+ * @param file  filename/path (start with /)
+ * @param doc JSONDocument
+ * @param error error info if it didn't work
+ * @return true success
+ * @return false not success, more info in error argument
  */
-void handleAPIConfigUpdate(AsyncWebServerRequest *request)
-{
-    Serial.println("TODO: config update");
-    // for (size_t i = 0; i < request->params(); i++)
-    // {
-    //     Serial.println("Param [" + String(i) + "]: " + request->getParam(i)->value());
-    // }
-    // DynamicJsonDocument doc(JSON_BUFFER);
-    // DeserializationError error = deserializeJson(doc, request->getParam(0)->value());
-
-    // // Test if parsing succeeds.
-    // if (error)
-    // {
-    //     Serial.print(F("deserializeJson() failed: "));
-    //     Serial.println(error.c_str());
-    //     request->send(500, "text/html", error.c_str());
-    //     return;
-    // }
-
-    // // open file
-    // File configFile = LITTLEFS.open("/config.json", "w");
-    // Serial.println("Config file: " + configFile.size());
-    // Serial.println("Config file: " + configFile.getWriteError());
-    // Serial.println("Config file: " + configFile.readString());
-
-    // // Serialize JSON to file
-    // if (serializeJson(doc, configFile) == 0)
-    // {
-    //     Serial.println(F("Failed to write to file"));
-    //     request->send(500, "text/html", "Failed to write to file " + configFile.getWriteError());
-    // }
-
-    // // Close the file
-    // configFile.close();
-
-    // // String name = server.arg("name"); //root["name"];
-    // // uint8_t value = server.arg("value").toInt();
-    // request->send(200, "text/html", "saved");
-}
-
 bool readJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc, DeserializationError &error)
 {
     // add webstreams from streams
@@ -455,6 +480,15 @@ bool readJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc, Deserializa
     return true;
 }
 
+/**
+ * @brief serializes JSON document to filesystem
+ * 
+ * @param fs target filesystem (SPIFFS, LITTLEFS, SD, ...)
+ * @param file filename/path (start with /)
+ * @param doc JSONDocument
+ * @return true if successful
+ * @return false if not successful
+ */
 bool writeJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc)
 {
     // open file
@@ -473,7 +507,7 @@ bool writeJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc)
 }
 
 /**
- * @brief returns the config (alarms, general config, ...)
+ * @brief returns the config (alarms, general config, ...) as JSON
  * 
  */
 void handleAPIConfig(AsyncWebServerRequest *request)
@@ -499,7 +533,7 @@ void handleAPIConfig(AsyncWebServerRequest *request)
         }
 
         // open file
-        File file = fsConfig.open("/config.json", "w");
+        File file = fsConfig.open("/config.json", FILE_WRITE);
 
         // Serialize JSON to file
         if (serializeJson(doc, file) == 0)
@@ -513,13 +547,13 @@ void handleAPIConfig(AsyncWebServerRequest *request)
         file.close();
     }
 
-    // File config = LITTLEFS.open("/config.json");
-    // server.streamFile(config, "text/json");
     request->send(fsConfig, "/config.json", "application/json");
 }
 
 /**
- * @brief return list of songs on LITTLEFS/SD and webstreams in streams.json
+ * @brief return list of songs on LITTLEFS/SD and webstreams in streams.json 
+ * and adds/deletes songs/streams if action is addStream/delete. To upload a new
+ * song, use handleAPISongsUpload
  * 
  */
 void handleAPISongs(AsyncWebServerRequest *request)
@@ -542,10 +576,10 @@ void handleAPISongs(AsyncWebServerRequest *request)
             }
 
             String action = req["action"];
-            Serial.println(request->getParam(0)->value());
-            Serial.println("Got Action " + action);
-            Serial.println("JSON request:");
-            serializeJson(req, Serial);
+            // Serial.println(request->getParam(0)->value());
+            // Serial.println("Got Action " + action);
+            // Serial.println("JSON request:");
+            // serializeJson(req, Serial);
 
             if (action == "delete")
             {
@@ -656,21 +690,33 @@ void handleAPISongs(AsyncWebServerRequest *request)
     request->send(response);
 }
 
+/**
+ * @brief Uploads a song to SD
+ * 
+ * @param request 
+ * @param filename song filename
+ * @param index data offset
+ * @param data data array
+ * @param len length of data array
+ */
 void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
     Serial.printf("Uploading %s (%u bytes written)\n", filename.c_str(), index);
 
     String path = "/songs/" + filename;
 
-    // open file
+    // open file if there is no other file opened
     if (!index)
     {
         Serial.printf("Open file %s\n", filename.c_str());
-        if(fsUploadFile){
+        if (fsUploadFile)
+        {
             Serial.println("File is already opened!");
             request->send(500, "text/plain", "file already opened");
             return;
-        } else {
+        }
+        else
+        {
             fsUploadFile = fsSongs.open(path, FILE_WRITE);
         }
     }
@@ -681,66 +727,22 @@ void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_
         fsUploadFile.write(data[i]);
     }
 
+    // close file
     if (final)
     {
         Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index + len);
         fsUploadFile.close();
         request->send(202, "text/plain", "ok");
     }
-
-
-// if (request->getParam(0)->isFile())
-//         {
-
-//             Serial.println("Wrong upload function :(");
-//             Serial.println(request->getParam(0)->name());
-//             Serial.println(request->getParam(0)->size());
-
-//             // write file to SD
-//             String path = "/songs/" + request->getParam(0)->name();
-//             File file = fsSongs.open(path, FILE_WRITE);
-//             if (!file)
-//             {
-//                 Serial.printf("Wiriting to %s failed!\n", path.c_str());
-//                 request->send(500, "application/json", "{\"error\" : \"cannot write file to SD\"");
-//                 return;
-//             }
-//             size_t len = file.write((uint8_t *)request->getParam(0)->value().c_str(), request->getParam(0)->size());
-//             Serial.printf("Wrote %d bytes to %s", len, file.name());
-//         }
-//         else 
-
-
-
-    // if method is POST and param exists
-    // if (request->method() == HTTP_POST && request->params())
-    // {
-    //     Serial.printf("POST with %d params\n", request->params());
-    //     if (request->getParam(0)->isFile())
-    //     {
-
-    //         Serial.println("ToDo: file upload");
-    //         Serial.println(request->getParam(0)->name());
-    //         Serial.println(filename);
-    //         Serial.println(final);
-    //         Serial.println(len);
-    //         Serial.println(index);
-
-    //         //     // write file to SD
-    //         //     String path = "/songs/" + request->getParam(0)->name();
-    //         //     File file = fsSongs.open(path, FILE_WRITE);
-    //         //     if(!file){
-    //         //         Serial.printf("Wiriting to %s failed!\n", path.c_str());
-    //         //         request->send(500, "application/json", "{\"error\" : \"cannot write file to SD\"");
-    //         //         return;
-    //         //     }
-    //         //     size_t len = file.write((uint8_t*)request->getParam(0)->value().c_str(), request->getParam(0)->size());
-    //         //     Serial.printf("Wrote %d bytes to %s", len, file.name());
-    //         // }
-    //     }
-    // }
 }
 
+/**
+ * @brief If POST data contains JSON object with play/pause/stop/volume action it will 
+ * play/pause/stop song or set volume. Always returns JSON with current audio state 
+ * (playing, postion, duration, volume, ...)
+ * 
+ * @param request 
+ */
 void handleAPIPlayback(AsyncWebServerRequest *request)
 {
     // if method is POST and param exists
@@ -748,7 +750,7 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
     {
         if (request->getParam(0)->isPost())
         {
-            Serial.println(request->getParam(0)->value());
+            // Serial.println(request->getParam(0)->value());
             // create JSON buffer
             DynamicJsonDocument doc(512);
             DeserializationError error = deserializeJson(doc, request->getParam(0)->value());
@@ -813,9 +815,14 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
     request->send(response);
 }
 
+/**
+ * @brief Sends JSON with heap size, cpu speed, used flash/sd space etc.
+ * 
+ * @param request 
+ */
+void handleAPIState(AsyncWebServerRequest *request)
+{
 
-void handleAPIState(AsyncWebServerRequest *request){
-    
     // create JSON response
     DynamicJsonDocument doc(JSON_BUFFER);
     doc["heap_free"] = ESP.getFreeHeap();
@@ -836,19 +843,6 @@ void handleAPIState(AsyncWebServerRequest *request){
     serializeJson(doc, *response);
     request->send(response);
 }
-// void handleAPIVolume(AsyncWebServerRequest *request){
-//     // if method is POST and param exists
-//     if (request->method() == HTTP_POST && request->params())
-//     {
-//         if (request->getParam(0)->isPost())
-//         {
-//             int param = request->getParam(0)->value().toInt();
-//             audio.setVolume(param);
-//         }
-//     }
-
-//     request->send(200, "application/text", String(audio.getVolume()));
-// }
 
 /**************************************
  *
@@ -881,18 +875,6 @@ time_t getNtpTime()
     }
     return mktime(&timeinfo) + time_offset_s;
 }
-
-/**************************************
- *
- * gets called when an Alarm was triggered. Checks all Timers for the right alarm and activates button
- *
- *************************************/
-// void timerCallback() {
-//     AlarmId id = Alarm.getTriggeredAlarmId();
-//     Serial.printf("Timer %d got triggered", id);
-//     audio.connecttoFS(LITTLEFS, "/songs/song1.mp3");
-//     // audio.connecttohost("http://www.wdr.de/wdrlive/media/einslive.m3u");
-// }
 
 /**************************************
  *

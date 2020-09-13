@@ -47,9 +47,16 @@
                     <path
                         d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z" />
                 </svg></button>
+            <!-- time / duration -->
+            <span data-bind="using: playback">
+                <button data-bind="visible: playing" class="btn btn-light nav-item" type="button">
+                    <span data-bind="text: current"></span>
+                </button>
+            </span>
+            <!-- volume control -->
             <input type="range" class="custom-range nav-item" id="playback_volume" placeholder="" min="0" max="21"
                 data-bind="value: $root.volume">
-                <span data-bind="text: $root.volume" class="nav-item" ></span>
+            <!-- <span data-bind="text: $root.volume" class="nav-item" ></span> -->
         </div>
     </nav>
 

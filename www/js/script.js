@@ -37,22 +37,20 @@ function Song(name, url, size) {
     self.size = ko.observable(size);
 }
 
-function Playback(song, playing, position, volume) {
+function Playback(song, playing, position, duration, volume) {
     var self = this;
     self.song = ko.observable(song);
     self.playing = ko.observable(playing);
     self.position = ko.observable(position);
+    self.duration = ko.observable(duration);
     self.volume = ko.observable(volume);
+
+    self.current = ko.computed(function(){
+        return self.position() + "/" + self.duration();
+    }, this);
 }
 
 function playbackCommand(req) {
-    // return $.ajax({
-    //     url: "/api/playback",
-    //     type: "POST",
-    //     data: req,
-    //     contentType: "application/json; charset=utf-8",
-    //     dataType: "json"
-    // });
     return $.post("/api/playback",
         JSON.stringify(req),
         function () {
@@ -88,6 +86,7 @@ function SettingsViewModel() {
     // get current config
     self.general = ko.observable(new General(0, 0));
     self.alarms = ko.observableArray([]);
+
     $.getJSON("/api/config", function (allData) {
         // general
         self.general(new General(allData.general.time_offset,
@@ -122,10 +121,11 @@ function SettingsViewModel() {
     self.playbackUpdate = function () {
         $.getJSON("/api/playback", function (data) {
             // playback
-            self.playback.name = null;
-            self.playback.playing = data.playing;
-            self.playback.position = data.current;
-            self.playback.volume = data.volume;
+            self.playback().song(null);
+            self.playback().playing(data.playing);
+            self.playback().position(data.current);
+            self.playback().duration(data.duration);
+            self.playback().volume(data.volume);
         })
     };
 
@@ -324,6 +324,6 @@ function SettingsViewModel() {
 }
 
 var model = new SettingsViewModel();
-// window.setInterval(model.playbackUpdate, 1000);
-model.playbackUpdate();
+window.setInterval(model.playbackUpdate, 1000);
+// model.playbackUpdate();
 ko.applyBindings(model);
