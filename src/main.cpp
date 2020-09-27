@@ -164,8 +164,11 @@ void setup()
     }
     else
     {
-        Serial.println("mDNS responder started");
+        Serial.printf("mDNS responder started with hostname %s.local\n", hostname);
     }
+
+    // show IP
+    Serial.println(WiFi.localIP());
 
     // sync time
     showDisplay(DisplayState::SYNC);
