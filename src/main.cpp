@@ -67,7 +67,11 @@ AsyncWiFiManager wifiManager(&server, &dns);
 // Display
 TM1637Display display(CLK, DIO);
 
+// parallel task
+TaskHandle_t pTask;
+
 // function declarations
+void parallelTask(void * parameter);
 void loadSettings(fs::FS &fs);
 void nextAlarm();
 void printAlarms();
@@ -205,6 +209,16 @@ void setup()
         handleAPISongsUpload);
     server.on("/api/playback", handleAPIPlayback);
 
+    // setup parallel task
+    xTaskCreatePinnedToCore(
+      parallelTask, /* Function to implement the task */
+      "task2", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      0,  /* Priority of the task */
+      &pTask,  /* Task handle. */
+      0); /* Core where the task should run */
+
     // open audiofile
     // audio.connecttoFS(LITTLEFS, "/song.mp3");
     //    audio.connecttoFS(SD, "test.wav");
@@ -223,9 +237,15 @@ void loop()
     // check for alarm and play
     checkPlayAlarm();
     audio.loop();
+}
 
-    // update display time
-    showDisplay(DisplayState::TIME);
+void parallelTask(void * parameter){
+    while (true)
+    {
+        // update display time
+        showDisplay(DisplayState::TIME);
+        delay(100);
+    }
 }
 
 /**

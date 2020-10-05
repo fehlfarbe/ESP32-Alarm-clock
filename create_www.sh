@@ -14,7 +14,7 @@ do
     for f in `ls www/${d}/*.${d}`
     do
         echo "Compress ${f} to data/${f}.gz"
-        cat ${f} | gzip > data/${f}.gz
+        cat ${f} | gzip -9 > data/${f}.gz
     done
 done
 
