@@ -42,7 +42,8 @@
 Audio audio;
 
 // settings
-uint32_t time_offset_s = 0;
+uint32_t gmt_offset_s = 0;
+uint32_t dst_offset_s = 0;
 uint8_t audio_volume = 0;
 
 // alarms
@@ -71,7 +72,7 @@ TM1637Display display(CLK, DIO);
 TaskHandle_t pTask;
 
 // function declarations
-void parallelTask(void * parameter);
+void parallelTask(void *parameter);
 void loadSettings(fs::FS &fs);
 void nextAlarm();
 void printAlarms();
@@ -96,7 +97,6 @@ void handleAPIState(AsyncWebServerRequest *request);
 // setup
 void setup()
 {
-
     // setup pins
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(BTN_WIFI_RESET, INPUT_PULLUP);
@@ -127,11 +127,16 @@ void setup()
     if (!SD.begin())
     {
         Serial.println("Card Mount Failed");
+        showDisplay(DisplayState::SD_ERR);
+        while (true);
+        
     }
     uint8_t cardType = SD.cardType();
     if (cardType == CARD_NONE)
     {
         Serial.println("No SD card attached");
+        showDisplay(DisplayState::SD_ERR);
+        while (true);
     }
     Serial.println("Files on SD:");
     listDir(SD, "/", 5);
@@ -211,13 +216,13 @@ void setup()
 
     // setup parallel task
     xTaskCreatePinnedToCore(
-      parallelTask, /* Function to implement the task */
-      "task2", /* Name of the task */
-      10000,  /* Stack size in words */
-      NULL,  /* Task input parameter */
-      0,  /* Priority of the task */
-      &pTask,  /* Task handle. */
-      0); /* Core where the task should run */
+        parallelTask, /* Function to implement the task */
+        "task2",      /* Name of the task */
+        10000,        /* Stack size in words */
+        NULL,         /* Task input parameter */
+        1,            /* Priority of the task */
+        &pTask,       /* Task handle. */
+        0);           /* Core where the task should run */
 
     // open audiofile
     // audio.connecttoFS(LITTLEFS, "/song.mp3");
@@ -229,6 +234,7 @@ void setup()
     //    audio.connecttohost("http://mp3.ffh.de/radioffh/hqlivestream.aac"); //  128k aac
     //   audio.connecttohost("http://mp3.ffh.de/radioffh/hqlivestream.mp3"); //  128k mp3
     //    audio.connecttospeech("Wenn die Hunde schlafen, kann der Wolf gut Schafe stehlen.", "de");
+    audio.setVolume(15);
     //    audio.connecttohost("http://media.ndr.de/download/podcasts/podcast4161/AU-20190404-0844-1700.mp3"); // podcast
 }
 
@@ -239,13 +245,15 @@ void loop()
     audio.loop();
 }
 
-void parallelTask(void * parameter){
+void parallelTask(void *parameter)
+{
     while (true)
     {
         // update display time
         showDisplay(DisplayState::TIME);
-        delay(100);
+        delay(1000);
     }
+    Serial.println("Exit task...");
 }
 
 /**
@@ -299,11 +307,17 @@ void loadSettings(fs::FS &fs)
         if (general.containsKey("audio_volume"))
         {
             audio_volume = (uint8_t)general["audio_volume"];
+            audio.setVolume(audio_volume);
         }
 
-        if (general.containsKey("time_offset"))
+        if (general.containsKey("gmt_offset"))
         {
-            time_offset_s = (uint32_t)general["time_offset"];
+            gmt_offset_s = (uint32_t)general["gmt_offset"];
+        }
+
+        if (general.containsKey("dst_offset"))
+        {
+            dst_offset_s = (uint32_t)general["dst_offset"];
         }
     }
 }
@@ -390,6 +404,18 @@ void showDisplay(DisplayState state)
         SEG_E | SEG_G | SEG_C,         // n
         SEG_E | SEG_G | SEG_C          // n
     };
+    const uint8_t sd_err[] = {
+        SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
+        SEG_E | SEG_G | SEG_D | SEG_C | SEG_B, // d
+        0,
+        0
+    };
+    const uint8_t ap[] = {
+        SEG_A | SEG_F | SEG_B | SEG_B | SEG_E | SEG_C, // A
+        SEG_A | SEG_F | SEG_G | SEG_B | SEG_E, // P
+        0,
+        0
+    };
 
     switch (state)
     {
@@ -399,20 +425,23 @@ void showDisplay(DisplayState state)
     case DisplayState::WIFI_CONNECTED:
         break;
     case DisplayState::WIFI_PORTAL:
+        display.setSegments(ap);
         break;
     case DisplayState::SYNC:
         display.setSegments(sync);
         break;
     case DisplayState::TIME:
-        if (!getLocalTime(&timeinfo))
+        if (!getLocalTime(&timeinfo, 1000))
         {
-            Serial.println("Failed to obtain time");
             display.showNumberDec(0, true);
         }
         else
         {
             display.showNumberDecEx(timeinfo.tm_hour * 100 + timeinfo.tm_min, 0b01000000, true);
         }
+        break;
+    case DisplayState::SD_ERR:
+        display.setSegments(sd_err);
         break;
     default:
         break;
@@ -878,14 +907,14 @@ time_t getNtpTime()
     if (!WiFi.isConnected())
     {
         Serial.println("WiFi not connected, cannot config time!");
-        return mktime(&timeinfo) + time_offset_s;
+        return mktime(&timeinfo) + gmt_offset_s + dst_offset_s;
     }
     //configTime(-3600, -3600, "69.10.161.7");
 
     Serial.printf("Update time with GMT+%02d and DST: %d\n",
-                  time_offset_s / 3600, 0);
+                  gmt_offset_s / 3600, dst_offset_s / 3600);
 
-    configTime(0, time_offset_s, "69.10.161.7");
+    configTime(gmt_offset_s, dst_offset_s, "69.10.161.7");
 
     if (!getLocalTime(&timeinfo))
     {
@@ -896,7 +925,7 @@ time_t getNtpTime()
         Serial.print("Synced time to: ");
         Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
     }
-    return mktime(&timeinfo) + time_offset_s;
+    return mktime(&timeinfo) + gmt_offset_s + dst_offset_s;
 }
 
 /**************************************
@@ -906,8 +935,8 @@ time_t getNtpTime()
  *************************************/
 void printTime(struct tm info)
 {
-    Serial.printf("%02d.%02d.%04d %02d:%02d:%02d %s, dst: %d",
-                  info.tm_mday, info.tm_mon, info.tm_year,
+    Serial.printf("%02d.%02d.%d %02d:%02d:%02d %s, dst: %d",
+                  info.tm_mday, info.tm_mon, info.tm_year + 1900,
                   info.tm_hour, info.tm_min, info.tm_sec,
                   dowName(info.tm_wday).c_str(),
                   info.tm_isdst);

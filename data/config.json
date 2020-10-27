@@ -1,7 +1,8 @@
 {
     "general" : {
         "audio_volume" : 14,
-        "time_offset" : 7200
+        "gmt_offset" : 3600,
+        "dst_offset" : 0
     },
     "alarms" : [
         {

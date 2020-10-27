@@ -1,4 +1,64 @@
-// Class to represent a row in the seat reservations grid
+var english = {
+    settings: "Settings",
+    timezone: "Timezone",
+    dst: "DST",
+    alarm_volume: "Alarm audio volume",
+    alarms: "Alarms",
+    name: "Name",
+    weekday: "Weekday",
+    time: "Time",
+    song: "Song/Stream/FM",
+    delete: "Delete",
+    save_config: "Save Config",
+    url: "URL",
+    size: "Size",
+    action: "Action",
+    add_stream: "Add stream",
+    add_song: "Add song",
+    add_fm: "Add fm",
+    file: "File",
+    add: "Add",
+    close: "Close",
+    monday: "Monday",
+    tuesday: "Tuesday",
+    wednesday: "Wednesday",
+    thursday: "Thursday",
+    friday: "Friday",
+    saturday: "Saturday",
+    sunday: "sunday"
+}
+
+var german = {
+    settings: "Einstellungen",
+    timezone: "Zeitzone",
+    dst: "Sommerzeit",
+    alarm_volume: "Alarm Lautstärke",
+    alarms: "Wecker",
+    name: "Name",
+    weekday: "Wochentag",
+    time: "Zeit",
+    song: "Lied/Stream/FM",
+    delete: "Löschen",
+    save_config: "Einstellungen speichern",
+    url: "URL",
+    size: "Größe",
+    action: "Aktion",
+    add_stream: "Stream hinzufügen",
+    add_song: "Lied hinzufügen",
+    add_fm: "Radiosender hinzufügen",
+    file: "Datei",
+    add: "Hinzufügen",
+    close: "Schließen",
+    monday: "Montag",
+    tuesday: "Dienstag",
+    wednesday: "Mittwoch",
+    thursday: "Donnerstag",
+    friday: "Freitag",
+    saturday: "Samstag",
+    sunday: "Sonntag"
+}
+
+
 function Alarm(name, dow, hour, minute, file) {
     // function Alarm(id, alarm) {
     var self = this;
@@ -24,9 +84,36 @@ function Alarm(name, dow, hour, minute, file) {
     }
 }
 
-function General(time_offset, audio_volume) {
+function General(gmt_offset, dst_offset, audio_volume) {
     var self = this;
-    self.time_offset = ko.observable(time_offset);
+    self.gmt_offset = ko.observable(gmt_offset);
+    self.dst_offset = ko.observable(dst_offset);
+
+    self.gmt_offset_h = ko.pureComputed({
+        read: function(){
+            return self.gmt_offset() / 3600;
+        },
+        write: function(value){
+            self.gmt_offset(value * 3600);
+        },
+        owner: self
+    });
+
+    self.dst_offset_h = ko.pureComputed({
+        read: function(){
+            return self.dst_offset() == 0 ? false : true;
+        },
+        write: function(value){
+            console.log(value);
+            if(value){
+                self.dst_offset(3600);
+            } else {
+                self.dst_offset(0);
+            }
+        },
+        owner: self
+    });
+
     self.audio_volume = ko.observable(audio_volume);
 }
 
@@ -62,15 +149,18 @@ function playbackCommand(req) {
 function SettingsViewModel() {
     var self = this;
 
+    // i18n
+    self.l = ko.observable(german);
+
     // Non-editable catalog data - would come from the server
     self.weekdays = [
-        { name: "Sunday", value: 0 },
-        { name: "Monday", value: 1 },
-        { name: "Tuesday", value: 2 },
-        { name: "Wednesday", value: 3 },
-        { name: "Thursday", value: 4 },
-        { name: "Friday", value: 5 },
-        { name: "Saturday", value: 6 }
+        { name: self.l().sunday, value: 0 },
+        { name: self.l().monday, value: 1 },
+        { name: self.l().tuesday, value: 2 },
+        { name: self.l().wednesday, value: 3 },
+        { name: self.l().thursday, value: 4 },
+        { name: self.l().friday, value: 5 },
+        { name: self.l().saturday, value: 6 }
     ];
 
     // load files list from SD
@@ -84,13 +174,14 @@ function SettingsViewModel() {
     });
 
     // get current config
-    self.general = ko.observable(new General(0, 0));
+    self.general = ko.observable(new General(0, 0, 0));
     self.alarms = ko.observableArray([]);
 
     $.getJSON("/api/config", function (allData) {
         // general
-        self.general(new General(allData.general.time_offset,
-            allData.general.audio_volume));
+        self.general(new General(allData.general.gmt_offset,
+                                 allData.general.dst_offset,
+                                 allData.general.audio_volume));
 
         // alarms
         var mappedAlarms = $.map(allData.alarms, function (a) {

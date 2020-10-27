@@ -7,7 +7,8 @@ enum DisplayState {
     WIFI_CONNECT,
     WIFI_CONNECTED,
     WIFI_PORTAL,
-    SYNC
+    SYNC,
+    SD_ERR
 };
 
 String dowName(int dow);

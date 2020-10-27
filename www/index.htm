@@ -7,13 +7,16 @@
 
     <title>MP3 Alarm</title>
 
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <!-- <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/select.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/jquery.min.js"></script>
     <script src="/js/knockout.js"></script>
     <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/select.min.js"></script>
+    <script src="/js/select.min.js"></script> -->
+
+    <link rel="stylesheet" href="/css/layout.css">
+    <script src="/js/deps.min.js"></script>
 </head>
 
 <body>
@@ -62,31 +65,36 @@
 
     <main role="main" class="container">
 
-        <div class="starter-template">
+        <!-- <div class="starter-template">
             <h1>MP3 Alarm</h1>
             <p class="lead">This is the MP3 Alarm configuration site.</p>
-        </div>
+        </div> -->
 
         <div class="col-md-12">
             <!-- General settings -->
             <div class="row">
-                <h4 class="mb-3">Settings</h4>
+                <h4 class="mb-3" data-bind="text: l().settings">Settings</h4>
             </div>
             <form class="needs-validation" novalidate>
                 <div class="row">
-                    <div class="col-md-6">
-                        <label for="time_offset">Time Offset (s)</label>
-                        <input type="text" class="form-control" id="time_offset" placeholder=""
-                            data-bind="value: general().time_offset" required>
+                    <div class="col-md-2">
+                        <label for="gmt_offset" data-bind="text: l().timezone">Timezone GMT+</label>
+                        <input type="number" min="-12" max="12" class="form-control" id="gmt_offset" placeholder=""
+                            data-bind="value: general().gmt_offset_h" required>
                         <div class="invalid-feedback">
                             Valid first name is required.
                         </div>
+                    </div>
+                    <div class="col-md-1">
+                        <label for="dst_offset" data-bind="text: l().dst">DST</label>
+                        <input type="checkbox" class="form-control form-check-input" id="dst_offset" placeholder=""
+                            data-bind="checked: general().dst_offset_h" required>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6">
-                        <label for="audio_volume">Alarm Audio Volume</label>
+                        <label for="audio_volume" data-bind="text: l().alarm_volume">Alarm Audio Volume</label>
                         <input type="range" min="0" max="21" class="custom-range" id="audio_volume" placeholder=""
                             data-bind="value: general().audio_volume" required>
                         <div class="invalid-feedback">
@@ -98,12 +106,12 @@
                 <!-- Alarms -->
 
                 <div class="row">
-                    <h4 class="mb-3">Alarms</h4>
+                    <h4 class="mb-3" data-bind="text: l().alarms">Alarms</h4>
                 </div>
                 <div id="alarms" data-bind="foreach: alarms">
                     <div class="row">
                         <div class="col-md-3">
-                            <label for="alarm_name">Name</label>
+                            <label for="alarm_name" data-bind="text: $root.l().name">Name</label>
                             <input type="text" class="form-control" id="alarm_name" placeholder=""
                                 data-bind="value: name" required>
                             <div class="invalid-feedback">
@@ -111,7 +119,7 @@
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <label for="alarm_dow">Weekday</label>
+                            <label for="alarm_dow" data-bind="text: $root.l().weekday">Weekday</label>
                             <select class="selectpicker"
                                 data-bind="options: $root.weekdays, selectedOptions: dow, optionsText: 'name', value: 'value'"
                                 placeholder="" required multiple="true">
@@ -121,7 +129,7 @@
                             </div>
                         </div>
                         <div class="col-md-2">
-                            <label for="alarm_time">Time</label>
+                            <label for="alarm_time" data-bind="text: $root.l().time">Time</label>
                             <input type="time" class="form-control" id="alarm_time" data-bind="value: timeForm"
                                 placeholder="" required>
                             <div class="invalid-feedback">
@@ -129,7 +137,7 @@
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <label for="alarm_song">Song/Stream</label>
+                            <label for="alarm_song" data-bind="text: $root.l().song">Song/Stream</label>
                             <select class="custom-select d-block w-100" id="alarm_song"
                                 data-bind="options: $root.songs, value: file, optionsText: 'name'" placeholder=""
                                 required>
@@ -139,7 +147,7 @@
                             </div>
                         </div>
                         <div class="col-md-1">
-                            <label for="alarm_delete">Delete</label>
+                            <label for="alarm_delete" data-bind="text: $root.l().delete">Delete</label>
                             <button class="btn btn-danger" type="button" data-bind="click: $root.removeAlarm"><svg
                                     width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-trash-fill"
                                     fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -155,22 +163,22 @@
                     </div>
                 </div>
                 <hr class="mb-4">
-                <button class="btn btn-success btn-lg btn-block" type="button" data-bind="click: save">Save
+                <button class="btn btn-success btn-lg btn-block" type="button" data-bind="click: save, text: l().save_config">Save
                     Config</button>
             </form>
 
             <!-- Files -->
 
             <div class="row">
-                <h4 class="mb-3">Songs / Streams</h4>
+                <h4 class="mb-3" data-bind="text: l().songs">Songs / Streams</h4>
             </div>
             <table class="table">
                 <thead>
                     <tr>
-                        <th scope="col">Name</th>
-                        <th scope="col">URL</th>
-                        <th scope="col">Size</th>
-                        <th scope="col">Action</th>
+                        <th scope="col" data-bind="text: $root.l().name">Name</th>
+                        <th scope="col" data-bind="text: $root.l().url">URL</th>
+                        <th scope="col" data-bind="text: $root.l().size">Size</th>
+                        <th scope="col" data-bind="text: $root.l().action">Action</th>
                     </tr>
                 </thead>
                 <tbody id="songs" data-bind="foreach: songs">
@@ -201,10 +209,10 @@
                 </tbody>
             </table>
             <!-- Button trigger modal -->
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalStream">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalStream" data-bind="text: l().add_stream">
                 Add stream
             </button>
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSong">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSong" data-bind="text: l().add_song">
                 Add song
             </button>
         </div>
@@ -214,7 +222,7 @@
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Add stream</h5>
+                        <h5 class="modal-title" data-bind="text: l().add_stream">Add stream</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -223,12 +231,12 @@
                         <div class="col-md-12">
                             <div class="row">
                                 <div class="col-md-12">
-                                    <label for="stream_name">Name</label>
+                                    <label for="stream_name" data-bind="text: l().name">Name</label>
                                     <input type="text" class="form-control" id="stream_name" placeholder=""
                                         data-bind="value: streamName" required>
                                 </div>
                                 <div class="col-md-12">
-                                    <label for="stream_url">URL</label>
+                                    <label for="stream_url" data-bind="text: l().url">URL</label>
                                     <input type="text" class="form-control" id="stream_url" placeholder=""
                                         data-bind="value: streamUrl" required>
                                 </div>
@@ -237,8 +245,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-success"
-                            data-bind="click: addStream, enable: streamUrl != undefined">Add</button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            data-bind="click: addStream, enable: streamUrl != undefined, text: l().add">Add</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="text: l().close">Close</button>
                     </div>
                 </div>
             </div>
@@ -249,7 +257,7 @@
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Upload song</h5>
+                        <h5 class="modal-title" data-bind="text: l().upload_song">Upload song</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -262,7 +270,7 @@
                                     <div class="custom-file">
                                         <input type="file" class="custom-file-input" id="song_file" placeholder=""
                                             data-bind="value: songFile">
-                                        <label class="custom-file-label" for="song_file">Choose file</label>
+                                        <label class="custom-file-label" for="song_file" data-bind="text: l().choose_file">Choose file</label>
                                     </div>
                                 </div>
                             </div>
@@ -275,8 +283,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-success" data-bind="click: addSong">Add</button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-success" data-bind="click: addSong" data-bind="text: l().add">Add</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="text: l().close">Close</button>
                     </div>
                 </div>
             </div>
