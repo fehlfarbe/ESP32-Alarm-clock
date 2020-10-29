@@ -8,6 +8,7 @@
 #include <AsyncJson.h>
 #include <ESPAsyncWebServer.h>
 #include <ESPAsyncWiFiManager.h>
+#include <Update.h>
 #include <time.h>
 #include <Time.h>
 #include <ArduinoJson.h>
@@ -47,7 +48,7 @@ uint32_t dst_offset_s = 0;
 uint8_t audio_volume = 0;
 
 // alarms
-#define MAX_ALARMS 150
+#define MAX_ALARMS 100
 AlarmSettings alarms[MAX_ALARMS];
 size_t alarms_size = 0;
 size_t alarms_next = 0;
@@ -93,6 +94,9 @@ void handleAPISongs(AsyncWebServerRequest *request);
 void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
 void handleAPIPlayback(AsyncWebServerRequest *request);
 void handleAPIState(AsyncWebServerRequest *request);
+void handleOTAUpdateForm(AsyncWebServerRequest *request);
+void handleOTAUpdateResponse(AsyncWebServerRequest *request);
+void handleOTAUpdateUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
 
 // setup
 void setup()
@@ -129,7 +133,6 @@ void setup()
         Serial.println("Card Mount Failed");
         showDisplay(DisplayState::SD_ERR);
         while (true);
-        
     }
     uint8_t cardType = SD.cardType();
     if (cardType == CARD_NONE)
@@ -214,6 +217,10 @@ void setup()
         handleAPISongsUpload);
     server.on("/api/playback", handleAPIPlayback);
 
+    // Simple Firmware Update
+    server.on("/update", HTTP_GET, handleOTAUpdateForm);
+    server.on("/update", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUpload);
+
     // setup parallel task
     xTaskCreatePinnedToCore(
         parallelTask, /* Function to implement the task */
@@ -234,8 +241,8 @@ void setup()
     //    audio.connecttohost("http://mp3.ffh.de/radioffh/hqlivestream.aac"); //  128k aac
     //   audio.connecttohost("http://mp3.ffh.de/radioffh/hqlivestream.mp3"); //  128k mp3
     //    audio.connecttospeech("Wenn die Hunde schlafen, kann der Wolf gut Schafe stehlen.", "de");
-    audio.setVolume(15);
-    //    audio.connecttohost("http://media.ndr.de/download/podcasts/podcast4161/AU-20190404-0844-1700.mp3"); // podcast
+    // audio.setVolume(15);
+    //    ahudio.connecttohost("http://media.ndr.de/download/podcasts/podcast4161/AU-20190404-0844-1700.mp3"); // podcast
 }
 
 void loop()
@@ -408,14 +415,12 @@ void showDisplay(DisplayState state)
         SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
         SEG_E | SEG_G | SEG_D | SEG_C | SEG_B, // d
         0,
-        0
-    };
+        0};
     const uint8_t ap[] = {
         SEG_A | SEG_F | SEG_B | SEG_B | SEG_E | SEG_C, // A
-        SEG_A | SEG_F | SEG_G | SEG_B | SEG_E, // P
+        SEG_A | SEG_F | SEG_G | SEG_B | SEG_E,         // P
         0,
-        0
-    };
+        0};
 
     switch (state)
     {
@@ -894,6 +899,54 @@ void handleAPIState(AsyncWebServerRequest *request)
     serializeJson(doc, Serial);
     serializeJson(doc, *response);
     request->send(response);
+}
+
+void handleOTAUpdateForm(AsyncWebServerRequest *request)
+{
+    request->send(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
+}
+
+void handleOTAUpdateResponse(AsyncWebServerRequest *request)
+{
+    bool shouldReboot = !Update.hasError();
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
+    response->addHeader("Connection", "close");
+    request->send(response);
+}
+
+void handleOTAUpdateUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+    if (!index)
+    {
+        Serial.printf("Update Start: %s\n", filename.c_str());
+        //   Update.runAsync(true);
+        if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
+        {
+            Update.printError(Serial);
+        } else {
+            Serial.println("Update begin...");
+        }
+    }
+    if (!Update.hasError())
+    {
+        Serial.printf("writing...%d bytes\n", len);
+        if (Update.write(data, len) != len)
+        {
+            Update.printError(Serial);
+        }
+    }
+    if (final)
+    {
+        if (Update.end(true))
+        {
+            Serial.printf("Update Success: %uB\n", index + len);
+            ESP.restart();
+        }
+        else
+        {
+            Update.printError(Serial);
+        }
+    }
 }
 
 /**************************************
