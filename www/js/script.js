@@ -25,7 +25,8 @@ var english = {
     thursday: "Thursday",
     friday: "Friday",
     saturday: "Saturday",
-    sunday: "sunday"
+    sunday: "sunday",
+    fm_frequency: "frequency"
 }
 
 var german = {
@@ -55,7 +56,8 @@ var german = {
     thursday: "Donnerstag",
     friday: "Freitag",
     saturday: "Samstag",
-    sunday: "Sonntag"
+    sunday: "Sonntag",
+    fm_frequency: "Frequenz"
 }
 
 
@@ -117,11 +119,19 @@ function General(gmt_offset, dst_offset, audio_volume) {
     self.audio_volume = ko.observable(audio_volume);
 }
 
-function Song(name, url, size) {
+function Song(name, url, size, type) {
     var self = this;
     self.name = ko.observable(name);
     self.url = ko.observable(url);
     self.size = ko.observable(size);
+    self.type = ko.observable(type);
+
+    self.url_typed = ko.computed(function() {
+        if(self.type() == "fm"){
+            return "FM: " + parseFloat(self.url()) / 100.0 + " MHz";
+        }
+        return self.url();
+    })
 }
 
 function Playback(song, playing, position, duration, volume) {
@@ -168,7 +178,7 @@ function SettingsViewModel() {
     $.getJSON("/api/songs", function (allData) {
         console.log("Songs", allData);
         var mappedSongs = $.map(allData, function (a) {
-            return new Song(a.name, a.url, a.size);
+            return new Song(a.name, a.url, a.size, a.type);
         });
         self.songs(mappedSongs);
     });
@@ -350,6 +360,8 @@ function SettingsViewModel() {
     self.streamUrl = ko.observable();
     self.songFile = ko.observable();
     self.songProgress = ko.observable(0);
+    self.fmName = ko.observable();
+    self.fmFreq = ko.observable(100);
 
     self.addSong = function () {
         console.log(self.songFile());
@@ -394,7 +406,8 @@ function SettingsViewModel() {
                 "action": "addStream",
                 "stream": {
                     "name": self.streamName(),
-                    "url": self.streamUrl()
+                    "url": self.streamUrl(),
+                    "type": "stream"
                 }
             };
 
@@ -403,8 +416,34 @@ function SettingsViewModel() {
                 function () {
                     console.log("sent ", req);
                 }).done(function (resp) {
-                    self.songs.push(new Song(self.streamName(), self.streamUrl()));
+                    self.songs.push(new Song(self.streamName(), self.streamUrl(), "stream"));
                     $('#modalStream').modal('hide');
+                })
+                .fail(function (e) {
+                    console.log(e);
+                    alert("Error: " + e.responseText);
+                });
+        }
+    }
+
+    self.addFM = function () {
+        if (self.fmName() != undefined && self.fmFreq() != undefined) {
+            var req = {
+                "action": "addStream",
+                "stream": {
+                    "name": self.fmName(),
+                    "url": self.fmFreq(),
+                    "type": "fm"
+                }
+            };
+
+            $.post("/api/songs",
+                JSON.stringify(req),
+                function () {
+                    console.log("sent ", req);
+                }).done(function (resp) {
+                    self.songs.push(new Song(self.fmName(), self.fmFreq(), "fm"));
+                    $('#modalFM').modal('hide');
                 })
                 .fail(function (e) {
                     console.log(e);

@@ -4,8 +4,8 @@ AlarmSettings::AlarmSettings(){
     name = "None...";
     
 }
-AlarmSettings::AlarmSettings(String name, int dow, int hour, int minute, String url) : 
-name(name), dow(dow), hour(hour), minute(minute), url(url) {
+AlarmSettings::AlarmSettings(String name, int dow, int hour, int minute, MusicStream stream) : 
+name(name), dow(dow), hour(hour), minute(minute), stream(stream) {
     
 }
 
@@ -15,7 +15,7 @@ AlarmSettings::~AlarmSettings(){
 
 String AlarmSettings::toString(){
     String s;
-    s += name + ": " + dowName(dow) + " " + hour + ":" + minute + " (" + url + ")";
+    s += name + ": " + dowName(dow) + " " + hour + ":" + minute + " (" + stream.getURL() + ")";
     return s;
 }
 
@@ -29,6 +29,10 @@ int AlarmSettings::differenceSec(const struct tm timeinfo){
         return TIME_MAX_SEC - diff;
     }
     return diff;
+}
+
+MusicStream& AlarmSettings::getStream(){
+    return stream;
 }
 
 bool AlarmSettings::operator <(const AlarmSettings &b){

@@ -14,5 +14,11 @@ This is an ESP32 based alarm clock that plays mp3 files from SD or webstreams. I
 
 - Add wiring for ESP32 and I2S module and SD card
 - Add screenshots of config
-- Add internet radio on alarm with timeout
-- Add internet radio that turns off on alarm for a while
+- Add alarm timeout (for webstreams, radio etc.)
+
+### PCB
+
+- Change Pins for TM1637 display (don't use I2C pins)
+- Add RDA5807M to PCB layout
+- New PCB with KiCAD
+- Different microSD Adapter

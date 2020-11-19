@@ -20,8 +20,10 @@
 #include <SPI.h>
 #include <Int64String.h>
 #include <TM1637Display.h>
+#include <RDA5807.h>
 
 #include "AlarmSettings.h"
+#include "MusicStream.h"
 #include "utils.h"
 
 // Digital I/O used
@@ -33,14 +35,21 @@
 #define BTN_WIFI_RESET 23
 #define LED_BUILTIN 5
 
-// I2C
+// Display and I2C
 #define CLK 22
 #define DIO 21
+#define SCL 17
+#define SDA 16
+
+// ADC, GPIO33
+#define ADC_UNIT ADC_UNIT_1
+#define ADC_CHANNEL ADC1_CHANNEL_5
 
 #define JSON_BUFFER 4096
 
 // Global variables
 Audio audio;
+RDA5807 radio;
 
 // settings
 uint32_t gmt_offset_s = 0;
@@ -109,13 +118,29 @@ void setup()
 
     // setup serial
     Serial.begin(115200);
+    delay(1000);
 
     // setup I2S audio
+    Serial.println("Setup I2S output");
     audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
     audio.setVolume(audio_volume); // 0...21
     audio.stopSong();
 
+    // setup I2C radio
+    Serial.println("Setup RDA5807M I2C radio");
+    Wire.begin(SDA, SCL);
+    Wire.beginTransmission (0x10);
+    if (Wire.endTransmission() == 0) {
+        Serial.print (F("I2C device found at 0x"));
+        radio.setup();
+        radio.setVolume(15);
+        radio.powerDown();
+    } else {
+        Serial.println("RDA5807M Radio not found");
+    }
+
     // setup display
+    display.clear();
     display.setBrightness(7, true);
 
     // Initialize LITTLEFS
@@ -128,18 +153,20 @@ void setup()
     listDir(LITTLEFS, "/", 5);
 
     // Initialize SD
-    if (!SD.begin())
+    while (!SD.begin())
     {
-        Serial.println("Card Mount Failed");
         showDisplay(DisplayState::SD_ERR);
-        while (true);
+        Serial.println("Card Mount Failed");
+        delay(1000);
     }
+
     uint8_t cardType = SD.cardType();
     if (cardType == CARD_NONE)
     {
         Serial.println("No SD card attached");
         showDisplay(DisplayState::SD_ERR);
-        while (true);
+        while (true)
+            ;
     }
     Serial.println("Files on SD:");
     listDir(SD, "/", 5);
@@ -155,12 +182,19 @@ void setup()
     //     wifiManager.resetSettings();
     // }
     showDisplay(DisplayState::WIFI_CONNECT);
+
     wifiManager.setConnectTimeout(10);
     if (!wifiManager.autoConnect())
     {
         Serial.println("failed to connect, we should reset as see if it connects");
     }
 
+    // while (true)
+    // {
+    //     /* code */
+    //     Serial.println(ESP.getFreeHeap());
+    //     delay(1000);
+    // }
     digitalWrite(LED_BUILTIN, HIGH);
 
     // print network settings
@@ -220,7 +254,7 @@ void setup()
     // Simple Firmware Update
     server.on("/update", HTTP_GET, handleOTAUpdateForm);
     server.on("/update", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUpload);
-
+    
     // setup parallel task
     xTaskCreatePinnedToCore(
         parallelTask, /* Function to implement the task */
@@ -294,16 +328,24 @@ void loadSettings(fs::FS &fs)
                 Serial.println("Maximum number of alarms reached!");
                 break;
             }
-            const char *name = (const char *)a["name"];
-            const char *file = (const char *)a["file"];
+            // read music type first
+            String music_name = a["music"];
+            String music_url = a["file"];
+            MusicType music_type = MusicStream::stringToType(a["type"]);
+            MusicStream stream = MusicStream(music_name, music_url, music_type);
+
+            // alarm params
+            String name = a["name"];
+            String file = a["file"];
             int hour = (int)a["hour"];
             int min = (int)a["minute"];
             JsonArray dow = a["dow"];
-            for (auto d : dow)
+
+            for (const auto &d : dow)
             {
                 int day = (int)d;
-                Serial.printf("Alarm %s %s %02d:%02d %s\n", name, dowName(day).c_str(), hour, min, file);
-                alarms[i++] = AlarmSettings(name, day, hour, min, file);
+                Serial.printf("Alarm %s %s %02d:%02d %s\n", name.c_str(), dowName(day).c_str(), hour, min, file.c_str());
+                alarms[i++] = AlarmSettings(name, day, hour, min, stream);
             }
         }
         alarms_size = i;
@@ -382,7 +424,25 @@ bool checkPlayAlarm()
     {
         Serial.println("Playing Alarm " + alarms[alarms_next].toString());
         audio.setVolume(audio_volume);
-        audio.connecttoFS(fsSongs, alarms[alarms_next].url);
+
+        auto stream = alarms[alarms_next].getStream();
+        switch (stream.getType())
+        {
+        case MusicType::FILESYSTEM:
+            audio.connecttoFS(fsSongs, stream.getURL());
+            break;
+        case MusicType::STREAM:
+            audio.connecttohost(stream.getURL());
+            break;
+        case MusicType::FM:
+            radio.powerUp();
+            radio.setFrequency(stream.getFMFrequency());
+            // audio.connecttoADC(ADC_UNIT, ADC_CHANNEL);
+            break;
+        default:
+            break;
+        }
+
         // select next alarm
         alarms_next = (alarms_next + 1) % alarms_size;
         return true;
@@ -829,6 +889,12 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
                 {
                     audio.connecttohost(url);
                 }
+                else if (url.toInt())
+                {
+                    radio.powerUp();
+                    radio.setFrequency(url.toInt());
+                    // audio.connecttoADC(ADC_UNIT, ADC_CHANNEL);
+                }
                 else
                 {
                     File file = fsSongs.open(url, FILE_READ);
@@ -923,7 +989,9 @@ void handleOTAUpdateUpload(AsyncWebServerRequest *request, String filename, size
         if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
         {
             Update.printError(Serial);
-        } else {
+        }
+        else
+        {
             Serial.println("Update begin...");
         }
     }

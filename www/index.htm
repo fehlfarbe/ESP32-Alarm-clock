@@ -184,7 +184,7 @@
                 <tbody id="songs" data-bind="foreach: songs">
                     <tr>
                         <td data-bind="text: name"></td>
-                        <td data-bind="text: url"></td>
+                        <td data-bind="text: url_typed"></td>
                         <td data-bind="text: size"></td>
                         <td><button class="btn btn-danger " type="button" data-bind="click: $root.removeSong"><svg
                                     width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-trash-fill"
@@ -214,6 +214,9 @@
             </button>
             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSong" data-bind="text: l().add_song">
                 Add song
+            </button>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalFM" data-bind="text: l().add_fm">
+                Add fm
             </button>
         </div>
 
@@ -290,6 +293,40 @@
             </div>
         </div>
 
+        <!-- new fm radio dialog -->
+        <div class="modal" tabindex="-1" role="dialog" id="modalFM">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" data-bind="text: l().add_fm">Add stream</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="col-md-12">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <label for="fm_name" data-bind="text: l().name">Name</label>
+                                    <input type="text" class="form-control" id="fm_name" placeholder=""
+                                        data-bind="value: fmName" required>
+                                </div>
+                                <div class="col-md-12">
+                                    <label for="fm_freq" data-bind="text: l().frequency">Frequency</label>
+                                    <input type="text" class="form-control" id="fm_freq" placeholder=""
+                                        data-bind="value: fmFreq" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success"
+                            data-bind="click: addStream, enable: streamUrl != undefined, text: l().add">Add</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="text: l().close">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main><!-- /.container -->
 
     <script src="/js/script.js"></script>

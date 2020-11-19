@@ -1,21 +1,24 @@
-#ifndef I2S_BELL_H
-#define I2S_BELL_H
+#ifndef ALARMSETTINGS_H
+#define ALARMSETTINGS_H
 #include <Arduino.h>
 #include <time.h>
 #include <Time.h>
 #include "utils.h"
+#include "MusicStream.h"
 
 #define TIME_MAX_SEC 604800
 
 class AlarmSettings {
     public:
         AlarmSettings();
-        AlarmSettings(String name, int dow, int hour, int minute, String url);
+        AlarmSettings(String name, int dow, int hour, int minute, MusicStream stream);
         ~AlarmSettings();
 
         String toString();
         int toSec() const;
         int differenceSec(const struct tm timeinfo);
+
+        MusicStream& getStream();
 
         bool operator <(const AlarmSettings &b);
         bool operator >(const AlarmSettings &b);
@@ -27,7 +30,7 @@ class AlarmSettings {
         int dow;
         int hour;
         int minute;
-        String url;
+        MusicStream stream;
 
     private:
         int tmToSec(const struct tm t);
@@ -35,4 +38,4 @@ class AlarmSettings {
 };
 
 
-#endif //I2S_BELL_H
+#endif //ALARMSETTINGS_H
