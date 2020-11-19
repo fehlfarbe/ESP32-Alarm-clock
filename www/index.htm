@@ -312,8 +312,8 @@
                                         data-bind="value: fmName" required>
                                 </div>
                                 <div class="col-md-12">
-                                    <label for="fm_freq" data-bind="text: l().frequency">Frequency</label>
-                                    <input type="text" class="form-control" id="fm_freq" placeholder=""
+                                    <label for="fm_freq"><span data-bind="text: l().fm_frequency">Frequency</span> <span data-bind="text: fmFreq"></span> MHz</label>
+                                    <input type="range" min="87" max="109" step="0.1" class="form-control" id="fm_freq" placeholder=""
                                         data-bind="value: fmFreq" required>
                                 </div>
                             </div>
@@ -321,7 +321,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-success"
-                            data-bind="click: addStream, enable: streamUrl != undefined, text: l().add">Add</button>
+                        data-bind="click: addFM, enable: fmFreq != undefined, text: l().add">Add</button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="text: l().close">Close</button>
                     </div>
                 </div>

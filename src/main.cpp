@@ -701,9 +701,10 @@ void handleAPISongs(AsyncWebServerRequest *request)
             if (action == "delete")
             {
                 String url = req["song"]["url"];
+                auto type = MusicStream::stringToType(req["song"]["type"]);
                 Serial.println("Delete song " + url);
                 // delete http streams from streams.json or delete file from SD card
-                if (url.startsWith("http://"))
+                if (type == MusicType::FM || type == MusicType::STREAM)
                 {
                     // read current streams
                     DynamicJsonDocument doc(JSON_BUFFER);
@@ -715,6 +716,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
                         request->send(500, "application/json", "{\"error\" : \"cannot read streams\"");
                         return;
                     }
+                    // find stream/fm on array, delete and write back
                     auto streams = doc.to<JsonArray>();
                     for (size_t i = 0; i < streams.size(); i++)
                     {
@@ -738,7 +740,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
             }
             else if (action == "addStream")
             {
-                // add new stream
+                // add new stream / fm station
                 // read current streams
                 DynamicJsonDocument doc(JSON_BUFFER);
                 JsonArray streams = doc.to<JsonArray>();
@@ -754,6 +756,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
                 JsonObject stream = streams.createNestedObject();
                 stream["name"] = req["stream"]["name"];
                 stream["url"] = req["stream"]["url"];
+                stream["type"] = req["stream"]["type"];
 
                 // add new stream
                 // streams.add(stream);
@@ -797,6 +800,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
         f["name"] = String(file.name()).substring(String(file.name()).lastIndexOf("/") + 1);
         f["url"] = String(file.name());
         f["size"] = file.size();
+        f["type"] = MusicStream::typeToString(MusicType::FILESYSTEM);
         file = root.openNextFile();
     }
 
@@ -889,10 +893,11 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
                 {
                     audio.connecttohost(url);
                 }
-                else if (url.toInt())
+                else if (url.toFloat())
                 {
+                    Serial.printf("Set radio frequency to %.2f\n", url.toFloat());
                     radio.powerUp();
-                    radio.setFrequency(url.toInt());
+                    radio.setFrequency((uint16_t)(url.toFloat()*100));
                     // audio.connecttoADC(ADC_UNIT, ADC_CHANNEL);
                 }
                 else

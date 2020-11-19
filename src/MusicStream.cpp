@@ -72,9 +72,9 @@ String MusicStream::getURL()
     return url;
 }
 
-int MusicStream::getFMFrequency()
+uint16_t MusicStream::getFMFrequency()
 {
-    return url.toInt();
+    return (uint16_t)(url.toFloat()*100);
 }
 
 MusicType MusicStream::getType()

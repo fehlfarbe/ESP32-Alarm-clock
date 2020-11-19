@@ -23,7 +23,7 @@ class MusicStream {
         bool isFM();
 
         String getURL();
-        int getFMFrequency();
+        uint16_t getFMFrequency();
         MusicType getType();
     
     private:

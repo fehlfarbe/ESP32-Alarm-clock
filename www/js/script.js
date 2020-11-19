@@ -128,7 +128,7 @@ function Song(name, url, size, type) {
 
     self.url_typed = ko.computed(function() {
         if(self.type() == "fm"){
-            return "FM: " + parseFloat(self.url()) / 100.0 + " MHz";
+            return "FM: " + self.url() + " MHz";
         }
         return self.url();
     })
