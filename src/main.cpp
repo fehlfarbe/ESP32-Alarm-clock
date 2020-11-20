@@ -84,6 +84,7 @@ TaskHandle_t pTask;
 // function declarations
 void parallelTask(void *parameter);
 void loadSettings(fs::FS &fs);
+void updateAlarms();
 void nextAlarm();
 void printAlarms();
 void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
@@ -229,12 +230,8 @@ void setup()
         Serial.println();
     }
 
-    // sort alarms by date
-    sortArray(alarms, alarms_size, compareAlarm);
-    Serial.println("Alarms after sort:");
-    printAlarms();
-    // select next alarm
-    nextAlarm();
+    // update alarms
+    updateAlarms();
 
     // HTTP Server
     server.begin();
@@ -372,6 +369,19 @@ void loadSettings(fs::FS &fs)
 }
 /**************************************
  *
+ * sort and update alarms
+ *
+ *************************************/
+void updateAlarms(){
+    // sort alarms by date
+    sortArray(alarms, alarms_size, compareAlarm);
+    Serial.println("Alarms after sort:");
+    printAlarms();
+    // select next alarm
+    nextAlarm();
+}
+/**************************************
+ *
  * selects next alarm, based on current time
  *
  *************************************/
@@ -425,7 +435,13 @@ bool checkPlayAlarm()
         Serial.println("Playing Alarm " + alarms[alarms_next].toString());
         audio.setVolume(audio_volume);
 
-        auto stream = alarms[alarms_next].getStream();
+        auto alarm = alarms[alarms_next];
+        auto stream = alarm.getStream();
+        Serial.printf("Playing %s of type %s from %s\n", alarm.name.c_str(),
+                                                         MusicStream::typeToString(stream.getType()).c_str(),
+                                                         stream.getURL().c_str());
+        Serial.println("Audio volume: " + audio_volume);
+
         switch (stream.getType())
         {
         case MusicType::FILESYSTEM:
@@ -662,6 +678,10 @@ void handleAPIConfig(AsyncWebServerRequest *request)
 
         // Close the file
         file.close();
+
+        // update config and reinit alarms
+        loadSettings(fsConfig);
+        updateAlarms();
     }
 
     request->send(fsConfig, "/config.json", "application/json");
@@ -938,7 +958,7 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
 
     // send JSON response
     AsyncResponseStream *response = request->beginResponseStream("application/json");
-    serializeJson(state, Serial);
+    // serializeJson(state, Serial);
     serializeJson(state, *response);
     request->send(response);
 }

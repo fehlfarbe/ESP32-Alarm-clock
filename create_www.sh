@@ -1,7 +1,8 @@
 #!/bin/bash
 
-PROJECT_DIR="$( dirname "${BASH_SOURCE[0]}" )"
+PROJECT_DIR="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 cd $PROJECT_DIR
+echo "Project path: $PROJECT_DIR"
 
 # clear data/www
 rm -rf $PROJECT_DIR/data/www

@@ -70,14 +70,29 @@ function Alarm(name, dow, hour, minute, file) {
     self.minute = ko.observable(minute);
     self.file = ko.observable(file);
 
-    self.timeForm = ko.observable(hour + ":" + minute);
+    self.timeForm = ko.pureComputed({
+        read: function () {
+            return ( (self.hour() < 10 ? '0' + self.hour() : self.hour()) || '00') 
+            + ':' + 
+            ( (self.minute() < 10 ? '0' + self.minute() : self.minute()) || '00')
+            return self.hour() + ":" + self.minute();
+        },
+        write: function(value){
+            console.log("Set time value to " + value);
+            self.hour(parseInt(value.split(":")[0]));
+            self.minute(parseInt(value.split(":")[1]));
+            console.log("new hour: " + self.hour() + " min: " + self.minute());
+        },
+        owner: self
+    });
 
     self.exportFormat = function () {
         var obj = new Object();
         obj.name = self.name()
-        obj.hour = parseInt(self.timeForm().split(":")[0]);
-        obj.minute = parseInt(self.timeForm().split(":")[1]);
+        obj.hour = self.hour();
+        obj.minute = self.minute();
         obj.file = self.file().url();
+        obj.type = self.file().type();
         obj.dow = Array();
         self.dow().forEach(d => {
             obj.dow.push(d.value);
@@ -92,22 +107,22 @@ function General(gmt_offset, dst_offset, audio_volume) {
     self.dst_offset = ko.observable(dst_offset);
 
     self.gmt_offset_h = ko.pureComputed({
-        read: function(){
+        read: function () {
             return self.gmt_offset() / 3600;
         },
-        write: function(value){
+        write: function (value) {
             self.gmt_offset(value * 3600);
         },
         owner: self
     });
 
     self.dst_offset_h = ko.pureComputed({
-        read: function(){
+        read: function () {
             return self.dst_offset() == 0 ? false : true;
         },
-        write: function(value){
+        write: function (value) {
             console.log(value);
-            if(value){
+            if (value) {
                 self.dst_offset(3600);
             } else {
                 self.dst_offset(0);
@@ -126,24 +141,44 @@ function Song(name, url, size, type) {
     self.size = ko.observable(size);
     self.type = ko.observable(type);
 
-    self.url_typed = ko.computed(function() {
-        if(self.type() == "fm"){
+    self.url_typed = ko.computed(function () {
+        if (self.type() == "fm") {
             return "FM: " + self.url() + " MHz";
         }
         return self.url();
-    })
+    }, this);
 }
 
-function Playback(song, playing, position, duration, volume) {
+function Playback(song, playing, current, position, duration, volume) {
     var self = this;
     self.song = ko.observable(song);
     self.playing = ko.observable(playing);
+    self.current = ko.observable(current);
     self.position = ko.observable(position);
     self.duration = ko.observable(duration);
     self.volume = ko.observable(volume);
 
-    self.current = ko.computed(function(){
-        return self.position() + "/" + self.duration();
+    self.fmt_time = function(s){
+        var hour = parseInt(s / 3600);
+        var minute = parseInt(s / 60) % 60;
+        var second = s % 60;
+        var text = "";
+        if(hour > 0){
+            text += hour < 10 ? '0' + hour : hour;
+            text += ":";
+        }
+        text += minute < 10 ? '0' + minute : minute;
+        text += ":";
+        text += second < 10 ? '0' + second : second;
+        return text;
+    }
+
+    self.status = ko.computed(function () {
+        var text = self.fmt_time(self.current());
+        if(self.duration() > 0){
+            text += "/" + self.fmt_time(self.duration());
+        }
+        return text;
     }, this);
 }
 
@@ -190,8 +225,8 @@ function SettingsViewModel() {
     $.getJSON("/api/config", function (allData) {
         // general
         self.general(new General(allData.general.gmt_offset,
-                                 allData.general.dst_offset,
-                                 allData.general.audio_volume));
+            allData.general.dst_offset,
+            allData.general.audio_volume));
 
         // alarms
         var mappedAlarms = $.map(allData.alarms, function (a) {
@@ -210,7 +245,7 @@ function SettingsViewModel() {
                 dowArray,
                 a.hour,
                 a.minute,
-                song)
+                song);
         });
         self.alarms(mappedAlarms);
 
@@ -224,7 +259,8 @@ function SettingsViewModel() {
             // playback
             self.playback().song(null);
             self.playback().playing(data.playing);
-            self.playback().position(data.current);
+            self.playback().current(data.current);
+            self.playback().position(data.position);
             self.playback().duration(data.duration);
             self.playback().volume(data.volume);
         })
@@ -416,7 +452,7 @@ function SettingsViewModel() {
                 function () {
                     console.log("sent ", req);
                 }).done(function (resp) {
-                    self.songs.push(new Song(self.streamName(), self.streamUrl(), "stream"));
+                    self.songs.push(new Song(self.streamName(), self.streamUrl(), null, "stream"));
                     $('#modalStream').modal('hide');
                 })
                 .fail(function (e) {
@@ -442,7 +478,7 @@ function SettingsViewModel() {
                 function () {
                     console.log("sent ", req);
                 }).done(function (resp) {
-                    self.songs.push(new Song(self.fmName(), self.fmFreq(), "fm"));
+                    self.songs.push(new Song(self.fmName(), self.fmFreq(), null, "fm"));
                     $('#modalFM').modal('hide');
                 })
                 .fail(function (e) {

@@ -52,9 +52,9 @@
                 </svg></button>
             <!-- time / duration -->
             <span data-bind="using: playback">
-                <button data-bind="visible: playing" class="btn btn-light nav-item" type="button">
-                    <span data-bind="text: current"></span>
-                </button>
+                <span data-bind="visible: playing" class="btn btn-light nav-item">
+                    <span data-bind="text: status"></span>
+                </span>
             </span>
             <!-- volume control -->
             <input type="range" class="custom-range nav-item" id="playback_volume" placeholder="" min="0" max="21"
