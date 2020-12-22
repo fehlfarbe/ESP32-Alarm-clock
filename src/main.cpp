@@ -36,10 +36,10 @@
 #define LED_BUILTIN 5
 
 // Display and I2C
-#define CLK 22
-#define DIO 21
-#define SCL 17
-#define SDA 16
+#define CLK 16
+#define DIO 17
+#define SCL 22
+#define SDA 21
 
 // ADC, GPIO33
 #define ADC_UNIT ADC_UNIT_1
@@ -98,6 +98,8 @@ void showDisplay(DisplayState state);
 bool readJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc, DeserializationError &error);
 bool writeJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc);
 
+void WiFiEvent( WiFiEvent_t event );
+
 // void handleAPIConfigUpdate(AsyncWebServerRequest *request);
 void handleAPIConfig(AsyncWebServerRequest *request);
 void handleAPISongs(AsyncWebServerRequest *request);
@@ -142,7 +144,7 @@ void setup()
 
     // setup display
     display.clear();
-    display.setBrightness(7, true);
+    display.setBrightness(3, true);
 
     // Initialize LITTLEFS
     if (!LITTLEFS.begin())
@@ -159,6 +161,7 @@ void setup()
         showDisplay(DisplayState::SD_ERR);
         Serial.println("Card Mount Failed");
         delay(1000);
+        while (true);
     }
 
     uint8_t cardType = SD.cardType();
@@ -166,8 +169,7 @@ void setup()
     {
         Serial.println("No SD card attached");
         showDisplay(DisplayState::SD_ERR);
-        while (true)
-            ;
+        while (true);
     }
     Serial.println("Files on SD:");
     listDir(SD, "/", 5);
@@ -183,7 +185,7 @@ void setup()
     //     wifiManager.resetSettings();
     // }
     showDisplay(DisplayState::WIFI_CONNECT);
-
+    WiFi.onEvent( WiFiEvent );
     wifiManager.setConnectTimeout(10);
     if (!wifiManager.autoConnect())
     {
@@ -640,6 +642,47 @@ bool writeJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc)
 }
 
 /**
+ * @brief handles WiFi events and auto reconnects
+ * 
+ */
+void WiFiEvent( WiFiEvent_t event ) {
+  switch ( event ) {
+    case SYSTEM_EVENT_AP_START:
+      ESP_LOGI( TAG, "AP Started");
+      //WiFi.softAPsetHostname(AP_SSID);
+      break;
+    case SYSTEM_EVENT_AP_STOP:
+      ESP_LOGI( TAG, "AP Stopped");
+      break;
+    case SYSTEM_EVENT_STA_START:
+      ESP_LOGI( TAG, "STA Started");
+      //WiFi.setHostname( DEFAULT_HOSTNAME_PREFIX.c_str( );
+      break;
+    case SYSTEM_EVENT_STA_CONNECTED:
+      ESP_LOGI( TAG, "STA Connected");
+      //WiFi.enableIpV6();
+      break;
+    case SYSTEM_EVENT_AP_STA_GOT_IP6:
+      ESP_LOGI( TAG, "STA IPv6: ");
+      //ESP_LOGI( TAG, "%s", WiFi.localIPv6().toString());
+      break;
+    case SYSTEM_EVENT_STA_GOT_IP:
+      //ESP_LOGI( TAG, "STA IPv4: ");
+      //ESP_LOGI( TAG, "%s", WiFi.localIP());
+      break;
+    case SYSTEM_EVENT_STA_DISCONNECTED:
+      ESP_LOGI( TAG, "STA Disconnected -> reconnect");
+      WiFi.begin();
+      break;
+    case SYSTEM_EVENT_STA_STOP:
+      ESP_LOGI( TAG, "STA Stopped");
+      break;
+    default:
+      break;
+  }
+}
+
+/**
  * @brief returns the config (alarms, general config, ...) as JSON
  * 
  */
@@ -839,6 +882,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
  * @param index data offset
  * @param data data array
  * @param len length of data array
+ * @param final true if last chunk
  */
 void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
@@ -873,7 +917,14 @@ void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_
     {
         Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index + len);
         fsUploadFile.close();
-        request->send(202, "text/plain", "ok");
+        DynamicJsonDocument buffer(JSON_BUFFER);
+        buffer["name"] = filename;
+        buffer["url"] = path;
+        buffer["size"] = len*index + len;
+        // send JSON response
+        AsyncResponseStream *response = request->beginResponseStream("application/json");
+        serializeJson(buffer, *response);
+        request->send(response);
     }
 }
 
@@ -1060,7 +1111,7 @@ time_t getNtpTime()
     Serial.printf("Update time with GMT+%02d and DST: %d\n",
                   gmt_offset_s / 3600, dst_offset_s / 3600);
 
-    configTime(gmt_offset_s, dst_offset_s, "69.10.161.7");
+    configTime(gmt_offset_s, dst_offset_s, "0.de.pool.ntp.org", "1.de.pool.ntp.org", "69.10.161.7");
 
     if (!getLocalTime(&timeinfo))
     {

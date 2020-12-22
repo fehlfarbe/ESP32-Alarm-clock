@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name mp3alarm-rescue)(type Legacy)(uri ${KIPRJMOD}/mp3alarm-rescue.lib)(options "")(descr ""))
+)

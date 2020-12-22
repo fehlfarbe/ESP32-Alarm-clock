@@ -72,12 +72,12 @@ function Alarm(name, dow, hour, minute, file) {
 
     self.timeForm = ko.pureComputed({
         read: function () {
-            return ( (self.hour() < 10 ? '0' + self.hour() : self.hour()) || '00') 
-            + ':' + 
-            ( (self.minute() < 10 ? '0' + self.minute() : self.minute()) || '00')
+            return ((self.hour() < 10 ? '0' + self.hour() : self.hour()) || '00')
+                + ':' +
+                ((self.minute() < 10 ? '0' + self.minute() : self.minute()) || '00')
             return self.hour() + ":" + self.minute();
         },
-        write: function(value){
+        write: function (value) {
             console.log("Set time value to " + value);
             self.hour(parseInt(value.split(":")[0]));
             self.minute(parseInt(value.split(":")[1]));
@@ -158,12 +158,12 @@ function Playback(song, playing, current, position, duration, volume) {
     self.duration = ko.observable(duration);
     self.volume = ko.observable(volume);
 
-    self.fmt_time = function(s){
+    self.fmt_time = function (s) {
         var hour = parseInt(s / 3600);
         var minute = parseInt(s / 60) % 60;
         var second = s % 60;
         var text = "";
-        if(hour > 0){
+        if (hour > 0) {
             text += hour < 10 ? '0' + hour : hour;
             text += ":";
         }
@@ -175,7 +175,7 @@ function Playback(song, playing, current, position, duration, volume) {
 
     self.status = ko.computed(function () {
         var text = self.fmt_time(self.current());
-        if(self.duration() > 0){
+        if (self.duration() > 0) {
             text += "/" + self.fmt_time(self.duration());
         }
         return text;
@@ -277,7 +277,6 @@ function SettingsViewModel() {
         var data = {};
         data.general = self.general();
         data.alarms = [];
-
         self.alarms().forEach(a => {
             data.alarms.push(a.exportFormat());
         });
@@ -401,7 +400,7 @@ function SettingsViewModel() {
 
     self.addSong = function () {
         console.log(self.songFile());
-        console.log($("#song_file")[0]);
+        // console.log($("#song_file")[0]);
         var formData = new FormData();
         // formData.append($("#song_file")[0].files[0].name, $("#song_file")[0].files[0]);
         formData.append('file', $("#song_file")[0].files[0]);
@@ -412,15 +411,26 @@ function SettingsViewModel() {
             data: formData,
             processData: false,
             contentType: false,
-            success: function (resp) {
-                console.log("done", resp);
-                console.log("TODO: return new song url and append to list");
-                // self.songs.push(new Song(self.streamName(), self.streamUrl()));
+            dataType: 'json',
+            success: function (data, textStatus, jqXHR) {
+                console.log("done", data);
+                var song = self.songs().find(obj => {
+                    return obj.url() === data.url;
+                });
+                // update exisiting songs filesize or add new song to list
+                if (song !== undefined) {
+                    console.log("File aready in list (was overwrittn). Update size");
+                    // update songs size
+                    song.size(data.size);
+                } else {
+                    self.songs.push(new Song(data.name, data.url, data.size, "file"));
+                }
                 $('#modalSong').modal('hide');
                 self.songProgress(0);
             },
-            error: function (e) {
+            error: function (e, textStatus, errorThrown) {
                 console.log("Error: ", e);
+                console.log(e.responseText);
                 alert("Error: " + e.responseText);
             },
             xhr: function () {
