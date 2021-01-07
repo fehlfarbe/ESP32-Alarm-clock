@@ -21,6 +21,7 @@
 #include <Int64String.h>
 #include <TM1637Display.h>
 #include <RDA5807.h>
+#include <FastLED.h>
 
 #include "AlarmSettings.h"
 #include "MusicStream.h"
@@ -31,9 +32,11 @@
 #define I2S_BCLK 4
 #define I2S_LRC 27
 
-#define BTN_PLAY 14
-#define BTN_WIFI_RESET 23
-#define LED_BUILTIN 5
+#define SW0 34
+#define SW1 35
+#define SW2 39
+#define LED_BUILTIN 2
+#define LED_STATUS 26
 
 // Display and I2C
 #define CLK 16
@@ -50,6 +53,9 @@
 // Global variables
 Audio audio;
 RDA5807 radio;
+
+// LED
+CRGB led_status[1];
 
 // settings
 uint32_t gmt_offset_s = 0;
@@ -81,6 +87,13 @@ TM1637Display display(CLK, DIO);
 // parallel task
 TaskHandle_t pTask;
 
+enum LED_STATE {
+    STATE_INIT = HUE_RED,
+    STATE_WIFI_CONNECTING = HUE_YELLOW,
+    STATE_WIFI_AP = HUE_BLUE,
+    STATE_WIFI_CONNECTED = HUE_GREEN
+};
+
 // function declarations
 void parallelTask(void *parameter);
 void loadSettings(fs::FS &fs);
@@ -94,6 +107,7 @@ void printTime(struct tm);
 bool compareAlarm(AlarmSettings first, AlarmSettings second);
 bool checkPlayAlarm();
 void showDisplay(DisplayState state);
+void setLEDSTate(LED_STATE state);
 
 bool readJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc, DeserializationError &error);
 bool writeJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc);
@@ -114,10 +128,14 @@ void handleOTAUpdateUpload(AsyncWebServerRequest *request, String filename, size
 void setup()
 {
     // setup pins
+    pinMode(SW0, INPUT_PULLUP);
+    pinMode(SW1, INPUT_PULLUP);
+    pinMode(SW2, INPUT_PULLUP);
     pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(BTN_WIFI_RESET, INPUT_PULLUP);
-    // ledcSetup(0, 5000, 8);
-    // ledcAttachPin(LED_BUILTIN, 0);
+    
+    // setup LEDs
+    FastLED.addLeds<NEOPIXEL, LED_STATUS>(led_status, 1);
+    setLEDSTate(LED_STATE::STATE_INIT);
 
     // setup serial
     Serial.begin(115200);
@@ -178,27 +196,21 @@ void setup()
     loadSettings(fsConfig);
 
     // connect WiFi
-    digitalWrite(LED_BUILTIN, LOW);
     // if (digitalRead(BTN_WIFI_RESET) == LOW)
     // {
     //     Serial.println("Reset WiFi setting...");
     //     wifiManager.resetSettings();
     // }
     showDisplay(DisplayState::WIFI_CONNECT);
+    setLEDSTate(LED_STATE::STATE_WIFI_CONNECTING);
     WiFi.onEvent( WiFiEvent );
     wifiManager.setConnectTimeout(10);
     if (!wifiManager.autoConnect())
     {
         Serial.println("failed to connect, we should reset as see if it connects");
+        setLEDSTate(LED_STATE::STATE_WIFI_AP);
     }
-
-    // while (true)
-    // {
-    //     /* code */
-    //     Serial.println(ESP.getFreeHeap());
-    //     delay(1000);
-    // }
-    digitalWrite(LED_BUILTIN, HIGH);
+    setLEDSTate(LED_STATE::STATE_WIFI_CONNECTED);
 
     // print network settings
     Serial.println(WiFi.localIP().toString());
@@ -280,18 +292,19 @@ void setup()
 
 void loop()
 {
-    // check for alarm and play
-    checkPlayAlarm();
     audio.loop();
+    // digitalWrite(LED_BUILTIN, audio.isRunning());
 }
 
 void parallelTask(void *parameter)
 {
     while (true)
     {
+        // check for alarm and play
+        checkPlayAlarm();
         // update display time
         showDisplay(DisplayState::TIME);
-        delay(1000);
+        delay(100);
     }
     Serial.println("Exit task...");
 }
@@ -355,7 +368,7 @@ void loadSettings(fs::FS &fs)
         if (general.containsKey("audio_volume"))
         {
             audio_volume = (uint8_t)general["audio_volume"];
-            audio.setVolume(audio_volume);
+            //audio.setVolume(audio_volume);
         }
 
         if (general.containsKey("gmt_offset"))
@@ -455,7 +468,8 @@ bool checkPlayAlarm()
         case MusicType::FM:
             radio.powerUp();
             radio.setFrequency(stream.getFMFrequency());
-            // audio.connecttoADC(ADC_UNIT, ADC_CHANNEL);
+            radio.setVolume(15);
+            audio.connecttoADC(ADC_UNIT, ADC_CHANNEL);
             break;
         default:
             break;
@@ -529,6 +543,16 @@ void showDisplay(DisplayState state)
     default:
         break;
     }
+}
+
+/**************************************
+ *
+ * Set LED state
+ *
+ *************************************/
+void setLEDSTate(LED_STATE state){
+    led_status[0] = CHSV(state, 255, 70);
+    FastLED.show();
 }
 
 /**************************************
@@ -649,6 +673,7 @@ void WiFiEvent( WiFiEvent_t event ) {
   switch ( event ) {
     case SYSTEM_EVENT_AP_START:
       ESP_LOGI( TAG, "AP Started");
+      setLEDSTate(LED_STATE::STATE_WIFI_AP);
       //WiFi.softAPsetHostname(AP_SSID);
       break;
     case SYSTEM_EVENT_AP_STOP:
@@ -660,6 +685,7 @@ void WiFiEvent( WiFiEvent_t event ) {
       break;
     case SYSTEM_EVENT_STA_CONNECTED:
       ESP_LOGI( TAG, "STA Connected");
+      setLEDSTate(LED_STATE::STATE_WIFI_CONNECTED);
       //WiFi.enableIpV6();
       break;
     case SYSTEM_EVENT_AP_STA_GOT_IP6:
@@ -672,6 +698,7 @@ void WiFiEvent( WiFiEvent_t event ) {
       break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
       ESP_LOGI( TAG, "STA Disconnected -> reconnect");
+      setLEDSTate(LED_STATE::STATE_INIT);
       WiFi.begin();
       break;
     case SYSTEM_EVENT_STA_STOP:
@@ -969,7 +996,8 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
                     Serial.printf("Set radio frequency to %.2f\n", url.toFloat());
                     radio.powerUp();
                     radio.setFrequency((uint16_t)(url.toFloat()*100));
-                    // audio.connecttoADC(ADC_UNIT, ADC_CHANNEL);
+                    radio.setVolume(15);
+                    audio.connecttoADC(ADC_UNIT, ADC_CHANNEL);
                 }
                 else
                 {
