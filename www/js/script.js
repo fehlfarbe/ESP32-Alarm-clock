@@ -60,6 +60,20 @@ var german = {
     fm_frequency: "Frequenz"
 }
 
+function getLanguage(){
+    var lang = navigator.language || navigator.userLanguage;
+    console.log(lang);
+    if(lang === "de-DE"){
+        return german;
+    }
+    return english;
+}
+
+function modalAlert(msg){
+    $("#modalAlertBody").html(msg);
+    $('#modalAlert').modal();
+}
+
 
 function Alarm(name, dow, hour, minute, file) {
     // function Alarm(id, alarm) {
@@ -147,6 +161,16 @@ function Song(name, url, size, type) {
         }
         return self.url();
     }, this);
+
+    self.name_extended = ko.computed(function(){
+        if (self.type() == "fm") {
+            return self.name() + " [FM: " + self.url() + " MHz]";
+        }
+        if (self.type() == "stream") {
+            return self.name() + " [stream]";
+        }
+        return self.name();
+        }, this);
 }
 
 function Playback(song, playing, current, position, duration, volume) {
@@ -195,7 +219,7 @@ function SettingsViewModel() {
     var self = this;
 
     // i18n
-    self.l = ko.observable(german);
+    self.l = ko.observable(getLanguage());
 
     // Non-editable catalog data - would come from the server
     self.weekdays = [
@@ -289,11 +313,11 @@ function SettingsViewModel() {
                 console.log("sent!");
             })
             .done(function (resp) {
-                alert("Saved config!");
+                modalAlert("Saved config!");
             })
             .fail(function (e) {
                 console.log(e);
-                alert("Error: " + e.responseText);
+                modalAlert("Error: " + e.responseText);
             });
     };
 
@@ -312,12 +336,12 @@ function SettingsViewModel() {
                 console.log("sent ", req);
             })
             .done(function (resp) {
-                alert("Deleted song!");
+                modalAlert("Deleted song!");
                 self.songs.remove(file)
             })
             .fail(function (e) {
                 console.log(e);
-                alert("Error: " + e.responseText);
+                modalAlert("Error: " + e.responseText);
             });
     }
 
@@ -342,7 +366,7 @@ function SettingsViewModel() {
         })
             .fail(function (e) {
                 console.log(e);
-                alert("Error: " + e.responseText);
+                modalAlert("Error: " + e.responseText);
             });
     }
 
@@ -356,7 +380,7 @@ function SettingsViewModel() {
         })
             .fail(function (e) {
                 console.log(e);
-                alert("Error: " + e.responseText);
+                modalAlert("Error: " + e.responseText);
             });
     }
 
@@ -370,7 +394,7 @@ function SettingsViewModel() {
         })
             .fail(function (e) {
                 console.log(e);
-                alert("Error: " + e.responseText);
+                modalAlert("Error: " + e.responseText);
             });
     }
 
@@ -386,7 +410,7 @@ function SettingsViewModel() {
 
         playbackCommand(req).fail(function (e) {
             console.log(e);
-            alert("Error: " + e.responseText);
+            modalAlert("Error: " + e.responseText);
         });
     });
 
@@ -431,7 +455,7 @@ function SettingsViewModel() {
             error: function (e, textStatus, errorThrown) {
                 console.log("Error: ", e);
                 console.log(e.responseText);
-                alert("Error: " + e.responseText);
+                modalAlert("Error: " + e.responseText);
             },
             xhr: function () {
                 var xhr = new window.XMLHttpRequest();
@@ -467,7 +491,7 @@ function SettingsViewModel() {
                 })
                 .fail(function (e) {
                     console.log(e);
-                    alert("Error: " + e.responseText);
+                    modalAlert("Error: " + e.responseText);
                 });
         }
     }
@@ -493,7 +517,7 @@ function SettingsViewModel() {
                 })
                 .fail(function (e) {
                     console.log(e);
-                    alert("Error: " + e.responseText);
+                    modalAlert("Error: " + e.responseText);
                 });
         }
     }

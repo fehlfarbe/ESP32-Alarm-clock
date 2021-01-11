@@ -35,7 +35,8 @@
 #define SW0 34
 #define SW1 35
 #define SW2 39
-#define LED_BUILTIN 2
+// #define LED_BUILTIN 2
+#define I2S_MUTE 2
 #define LED_STATUS 26
 
 // Display and I2C
@@ -131,7 +132,7 @@ void setup()
     pinMode(SW0, INPUT_PULLUP);
     pinMode(SW1, INPUT_PULLUP);
     pinMode(SW2, INPUT_PULLUP);
-    pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(I2S_MUTE, OUTPUT);
     
     // setup LEDs
     FastLED.addLeds<NEOPIXEL, LED_STATUS>(led_status, 1);

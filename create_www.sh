@@ -13,9 +13,9 @@ mkdir -p $PROJECT_DIR/data/www/css
 
 # create js/css for depenencies
 cd $PROJECT_DIR/www/js
-cat jquery.min.js bootstrap.min.js knockout.js select.min.js > deps.min.js
+cat jquery.min.js bootstrap.min.js knockout.js select.min.js bootstrap4-toggle.min.js > deps.min.js
 cd $PROJECT_DIR/www/css
-cat bootstrap.min.css select.min.css style.css > layout.css
+cat bootstrap.min.css select.min.css bootstrap4-toggle.min.css style.css > layout.css
 
 # zip webinterface stuff to data/www
 cd $PROJECT_DIR

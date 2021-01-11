@@ -7,16 +7,9 @@
 
     <title>MP3 Alarm</title>
 
-    <!-- <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/select.min.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/jquery.min.js"></script>
-    <script src="/js/knockout.js"></script>
-    <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/select.min.js"></script> -->
-
     <link rel="stylesheet" href="/css/layout.css">
     <script src="/js/deps.min.js"></script>
+
 </head>
 
 <body>
@@ -29,7 +22,7 @@
 
         <div class="collapse navbar-collapse" id="navbarsExampleDefault">
             <select class="custom-select d-block w-100 nav-item" id="playback_song"
-                data-bind="options: $root.songs, optionsText: 'name', optionsValue: 'url', value: $root.selectedPlayback"
+                data-bind="options: $root.songs, optionsText: 'name_extended', optionsValue: 'url', value: $root.selectedPlayback"
                 placeholder=""> </select>
             <!-- control buttons-->
             <button class="btn btn-success  nav-item" type="button" data-bind="click: $root.playSong"><svg width="1em"
@@ -87,7 +80,7 @@
                     </div>
                     <div class="col-md-1">
                         <label for="dst_offset" data-bind="text: l().dst">DST</label>
-                        <input type="checkbox" class="form-control form-check-input" id="dst_offset" placeholder=""
+                        <input type="checkbox" data-toggle="toggle"  id="dst_offset" placeholder=""
                             data-bind="checked: general().dst_offset_h" required>
                     </div>
                 </div>
@@ -163,7 +156,8 @@
                     </div>
                 </div>
                 <hr class="mb-4">
-                <button class="btn btn-success btn-lg btn-block" type="button" data-bind="click: save, text: l().save_config">Save
+                <button class="btn btn-success btn-lg btn-block" type="button"
+                    data-bind="click: save, text: l().save_config">Save
                     Config</button>
             </form>
 
@@ -209,13 +203,16 @@
                 </tbody>
             </table>
             <!-- Button trigger modal -->
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalStream" data-bind="text: l().add_stream">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalStream"
+                data-bind="text: l().add_stream">
                 Add stream
             </button>
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSong" data-bind="text: l().add_song">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSong"
+                data-bind="text: l().add_song">
                 Add song
             </button>
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalFM" data-bind="text: l().add_fm">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalFM"
+                data-bind="text: l().add_fm">
                 Add fm
             </button>
         </div>
@@ -249,7 +246,8 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-success"
                             data-bind="click: addStream, enable: streamUrl != undefined, text: l().add">Add</button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="text: l().close">Close</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                            data-bind="text: l().close">Close</button>
                     </div>
                 </div>
             </div>
@@ -273,7 +271,8 @@
                                     <div class="custom-file">
                                         <input type="file" class="custom-file-input" id="song_file" placeholder=""
                                             data-bind="value: songFile">
-                                        <label class="custom-file-label" for="song_file" data-bind="text: l().choose_file">Choose file</label>
+                                        <label class="custom-file-label" for="song_file"
+                                            data-bind="text: l().choose_file">Choose file</label>
                                     </div>
                                 </div>
                             </div>
@@ -286,8 +285,10 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-success" data-bind="click: addSong" data-bind="text: l().add">Add</button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="text: l().close">Close</button>
+                        <button type="button" class="btn btn-success" data-bind="click: addSong"
+                            data-bind="text: l().add">Add</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                            data-bind="text: l().close">Close</button>
                     </div>
                 </div>
             </div>
@@ -312,21 +313,55 @@
                                         data-bind="value: fmName" required>
                                 </div>
                                 <div class="col-md-12">
-                                    <label for="fm_freq"><span data-bind="text: l().fm_frequency">Frequency</span> <span data-bind="text: fmFreq"></span> MHz</label>
-                                    <input type="range" min="87" max="109" step="0.1" class="form-control" id="fm_freq" placeholder=""
-                                        data-bind="value: fmFreq" required>
+                                    <label for="fm_freq"><span data-bind="text: l().fm_frequency">Frequency</span> <span
+                                            data-bind="text: fmFreq"></span> MHz</label>
+                                    <input type="range" min="87" max="109" step="0.1" class="form-control" id="fm_freq"
+                                        placeholder="" data-bind="value: fmFreq" required>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-success"
-                        data-bind="click: addFM, enable: fmFreq != undefined, text: l().add">Add</button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="text: l().close">Close</button>
+                            data-bind="click: addFM, enable: fmFreq != undefined, text: l().add">Add</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                            data-bind="text: l().close">Close</button>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- alert modal -->
+        <!-- <div id="modalAlert" class="modal fade bd-example-modal" tabindex="-1" role="dialog" aria-labelledby="alert"
+            aria-hidden="true">
+            <div class="modal-dialog modal">
+                <div id="modalAlertContent" class="modal-content">
+                    ...
+                </div>
+            </div>
+        </div> -->
+
+    <!-- Modal -->
+    <div class="modal fade" id="modalAlert" tabindex="-1" role="dialog" aria-labelledby="modalAlert" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header alert-danger">
+            <h5 class="modal-title" id="modalAlertTitle">Error</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body" id="modalAlertBody">
+            ...
+            </div>
+            <!-- <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary">Save changes</button>
+            </div> -->
+        </div>
+        </div>
+    </div>
+
     </main><!-- /.container -->
 
     <script defer src="/js/script.js"></script>
