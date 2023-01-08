@@ -3,3 +3,4 @@
 data/www
 hardware/pcb/mp3alarm/qr-code.svg
 hardware/pcb/mp3alarm/oshw-logo.svg
+sd/*

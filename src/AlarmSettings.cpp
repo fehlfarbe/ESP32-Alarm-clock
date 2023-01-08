@@ -1,8 +1,7 @@
 #include "AlarmSettings.h"
 
 AlarmSettings::AlarmSettings(){
-    name = "None...";
-    
+    name = "null";
 }
 AlarmSettings::AlarmSettings(String name, int dow, int hour, int minute, MusicStream stream) : 
 name(name), dow(dow), hour(hour), minute(minute), stream(stream) {
