@@ -2,7 +2,7 @@
 #define ALARMSETTINGS_H
 #include <Arduino.h>
 #include <time.h>
-#include <Time.h>
+#include <TimeLib.h>
 #include "utils.h"
 #include "MusicStream.h"
 

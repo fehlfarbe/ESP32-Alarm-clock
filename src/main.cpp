@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <Esp.h>
 #include <WiFi.h>
 #include <DNSServer.h>
 #include <ESPmDNS.h>
@@ -10,9 +9,8 @@
 #include <ESPAsyncWiFiManager.h>
 #include <Update.h>
 #include <time.h>
-#include <Time.h>
+#include <TimeLib.h>
 #include <ArduinoJson.h>
-#include <Audio.h>
 #include <ArduinoSort.h>
 #include <FS.h>
 #include <LITTLEFS.h>
@@ -20,17 +18,18 @@
 #include <SPI.h>
 #include <Int64String.h>
 #include <TM1637Display.h>
-#include <RDA5807.h>
 #include <FastLED.h>
 
 #include "AlarmSettings.h"
 #include "MusicStream.h"
+#include "AudioProvider.h"
 #include "utils.h"
 
 // Digital I/O used
 #define I2S_DOUT 25
 #define I2S_BCLK 4
-#define I2S_LRC 27
+#define I2S_WS 27
+#define I2S_DIN 35
 
 #define SW0 34
 #define SW1 35
@@ -45,15 +44,10 @@
 #define SCL 22
 #define SDA 21
 
-// ADC, GPIO33
-#define ADC_UNIT ADC_UNIT_1
-#define ADC_CHANNEL ADC1_CHANNEL_5
-
 #define JSON_BUFFER 4096
 
 // Global variables
-Audio audio;
-RDA5807 radio;
+AudioProvider audio(I2S_BCLK, I2S_DOUT, I2S_WS, I2S_DIN);
 
 // LED
 CRGB led_status[1];
@@ -142,31 +136,17 @@ void setup()
     Serial.begin(115200);
     delay(1000);
 
-    // setup I2S audio
+    // setup audio
     Serial.println("Setup I2S output");
-    audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
     audio.setVolume(audio_volume); // 0...21
-    audio.stopSong();
-
-    // setup I2C radio
-    Serial.println("Setup RDA5807M I2C radio");
-    Wire.begin(SDA, SCL);
-    Wire.beginTransmission (0x10);
-    if (Wire.endTransmission() == 0) {
-        Serial.print (F("I2C device found at 0x"));
-        radio.setup();
-        radio.setVolume(15);
-        radio.powerDown();
-    } else {
-        Serial.println("RDA5807M Radio not found");
-    }
+    audio.stop();    
 
     // setup display
     display.clear();
     display.setBrightness(3, true);
 
     // Initialize LITTLEFS
-    if (!LITTLEFS.begin())
+    if (!LITTLEFS.begin(false, "/littlefs", 10))
     {
         Serial.println("An Error has occurred while mounting LITTLEFS");
     }
@@ -317,7 +297,7 @@ void parallelTask(void *parameter)
  */
 void loadSettings(fs::FS &fs)
 {
-    File configFile = fs.open("/config.json");
+    File configFile = fs.open("/config.json", FILE_READ, false);
     String json = configFile.readString();
     configFile.close();
     Serial.println(json);
@@ -461,16 +441,13 @@ bool checkPlayAlarm()
         switch (stream.getType())
         {
         case MusicType::FILESYSTEM:
-            audio.connecttoFS(fsSongs, stream.getURL());
+            audio.playFile(fsSongs, stream.getURL());
             break;
         case MusicType::STREAM:
-            audio.connecttohost(stream.getURL());
+            audio.playUrl(stream.getURL());
             break;
         case MusicType::FM:
-            radio.powerUp();
-            radio.setFrequency(stream.getFMFrequency());
-            radio.setVolume(15);
-            audio.connecttoADC(ADC_UNIT, ADC_CHANNEL);
+            audio.playRadio(stream.getFMFrequency());
             break;
         default:
             break;
@@ -578,7 +555,7 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 {
     Serial.printf("Listing directory: %s\n", dirname);
 
-    File root = fs.open(dirname);
+    File root = fs.open(dirname, FILE_READ, false);
     if (!root)
     {
         Serial.println("Failed to open directory");
@@ -599,7 +576,7 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
             Serial.println(file.name());
             if (levels)
             {
-                listDir(fs, file.name(), levels - 1);
+                listDir(fs, (String(dirname) + String(file.name())).c_str(), levels - 1);
             }
         }
         else
@@ -626,7 +603,7 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 bool readJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc, DeserializationError &error)
 {
     // add webstreams from streams
-    File streamsFile = fs.open(file, FILE_READ);
+    File streamsFile = fs.open(file, FILE_READ, false);
     String json = streamsFile.readString();
     streamsFile.close();
     Serial.println(json);
@@ -671,43 +648,43 @@ bool writeJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc)
  * 
  */
 void WiFiEvent( WiFiEvent_t event ) {
-  switch ( event ) {
-    case SYSTEM_EVENT_AP_START:
-      ESP_LOGI( TAG, "AP Started");
-      setLEDSTate(LED_STATE::STATE_WIFI_AP);
-      //WiFi.softAPsetHostname(AP_SSID);
-      break;
-    case SYSTEM_EVENT_AP_STOP:
-      ESP_LOGI( TAG, "AP Stopped");
-      break;
-    case SYSTEM_EVENT_STA_START:
-      ESP_LOGI( TAG, "STA Started");
-      //WiFi.setHostname( DEFAULT_HOSTNAME_PREFIX.c_str( );
-      break;
-    case SYSTEM_EVENT_STA_CONNECTED:
-      ESP_LOGI( TAG, "STA Connected");
-      setLEDSTate(LED_STATE::STATE_WIFI_CONNECTED);
-      //WiFi.enableIpV6();
-      break;
-    case SYSTEM_EVENT_AP_STA_GOT_IP6:
-      ESP_LOGI( TAG, "STA IPv6: ");
-      //ESP_LOGI( TAG, "%s", WiFi.localIPv6().toString());
-      break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-      //ESP_LOGI( TAG, "STA IPv4: ");
-      //ESP_LOGI( TAG, "%s", WiFi.localIP());
-      break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-      ESP_LOGI( TAG, "STA Disconnected -> reconnect");
-      setLEDSTate(LED_STATE::STATE_INIT);
-      WiFi.begin();
-      break;
-    case SYSTEM_EVENT_STA_STOP:
-      ESP_LOGI( TAG, "STA Stopped");
-      break;
-    default:
-      break;
-  }
+//   switch ( event ) {
+//     case SYSTEM_EVENT_AP_START:
+//       ESP_LOGI( TAG, "AP Started");
+//       setLEDSTate(LED_STATE::STATE_WIFI_AP);
+//       //WiFi.softAPsetHostname(AP_SSID);
+//       break;
+//     case SYSTEM_EVENT_AP_STOP:
+//       ESP_LOGI( TAG, "AP Stopped");
+//       break;
+//     case SYSTEM_EVENT_STA_START:
+//       ESP_LOGI( TAG, "STA Started");
+//       //WiFi.setHostname( DEFAULT_HOSTNAME_PREFIX.c_str( );
+//       break;
+//     case SYSTEM_EVENT_STA_CONNECTED:
+//       ESP_LOGI( TAG, "STA Connected");
+//       setLEDSTate(LED_STATE::STATE_WIFI_CONNECTED);
+//       //WiFi.enableIpV6();
+//       break;
+//     case SYSTEM_EVENT_AP_STA_GOT_IP6:
+//       ESP_LOGI( TAG, "STA IPv6: ");
+//       //ESP_LOGI( TAG, "%s", WiFi.localIPv6().toString());
+//       break;
+//     case SYSTEM_EVENT_STA_GOT_IP:
+//       //ESP_LOGI( TAG, "STA IPv4: ");
+//       //ESP_LOGI( TAG, "%s", WiFi.localIP());
+//       break;
+//     case SYSTEM_EVENT_STA_DISCONNECTED:
+//       ESP_LOGI( TAG, "STA Disconnected -> reconnect");
+//       setLEDSTate(LED_STATE::STATE_INIT);
+//       WiFi.begin();
+//       break;
+//     case SYSTEM_EVENT_STA_STOP:
+//       ESP_LOGI( TAG, "STA Stopped");
+//       break;
+//     default:
+//       break;
+//   }
 }
 
 /**
@@ -990,15 +967,12 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
                 Serial.printf("Playing song %s\n", url.c_str());
                 if (url.startsWith("http"))
                 {
-                    audio.connecttohost(url);
+                    audio.playUrl(url);
                 }
                 else if (url.toFloat())
                 {
                     Serial.printf("Set radio frequency to %.2f\n", url.toFloat());
-                    radio.powerUp();
-                    radio.setFrequency((uint16_t)(url.toFloat()*100));
-                    radio.setVolume(15);
-                    audio.connecttoADC(ADC_UNIT, ADC_CHANNEL);
+                    audio.playRadio((uint16_t)(url.toFloat()*100));
                 }
                 else
                 {
@@ -1009,16 +983,20 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
                         file.close();
                         return;
                     }
-                    audio.connecttoFS(fsSongs, url);
+                    audio.playFile(fsSongs, url);
                 }
             }
             else if (action == "stop")
             {
-                audio.stopSong();
+                audio.stop();
             }
             else if (action == "pause")
             {
-                audio.pauseResume();
+                if(audio.isPlaying()){
+                    audio.pause();
+                } else {
+                    audio.resume();
+                }
             }
             else if (action == "volume")
             {
@@ -1031,10 +1009,10 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
     // create JSON response
     DynamicJsonDocument state(JSON_BUFFER);
     state["volume"] = audio.getVolume();
-    state["position"] = audio.getFilePos();
-    state["current"] = audio.getAudioCurrentTime();
-    state["duration"] = audio.getAudioFileDuration();
-    state["playing"] = audio.isRunning();
+    state["position"] = audio.getFilePosition();
+    state["current"] = audio.getCurrentTime();
+    state["duration"] = audio.getTotalTime();
+    state["playing"] = audio.isPlaying();
 
     // send JSON response
     AsyncResponseStream *response = request->beginResponseStream("application/json");
