@@ -24,7 +24,7 @@ cat www/js/script.js | gzip -9 > data/www/js/script.js.gz
 cat www/css/layout.css | gzip -9 > data/www/css/layout.css.gz
 cat www/index.htm | gzip > data/www/index.htm.gz
 
-
+echo "done!"
 # copy and zip JS/CSS files
 # for d in js css
 # do

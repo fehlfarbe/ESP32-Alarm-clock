@@ -405,7 +405,7 @@ function SettingsViewModel() {
         console.log("New volume: ", value);
         var req = {
             "action": "volume",
-            "volume": value
+            "volume": parseFloat(value)
         };
 
         playbackCommand(req).fail(function (e) {

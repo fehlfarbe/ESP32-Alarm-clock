@@ -2,25 +2,41 @@
 #define AUDIOPROVIDER_H
 
 #include <FS.h>
-#include <radio.h>
 #include <RDA5807FP.h>
 #include <AudioTools.h>
-// #include <AudioCodecs/CodecMP3Helix.h>
+#include <AudioTools/VolumeStream.h>
 
-enum PlayMode {
+enum PlayMode
+{
     PLAY_STREAM,
     PLAY_RADIO
 };
 
+enum MediaType
+{
+    NONE,
+    STREAM,
+    AUDIOFILE,
+    FM
+};
+
+struct Media
+{
+    String source;
+    fs::FS *filesystem;
+    MediaType type;
+};
 
 class AudioProvider
 {
 public:
-    AudioProvider(uint8_t pinBCK, uint8_t pinData, uint8_t pinWS, uint8_t pinDin);
+    AudioProvider();
     ~AudioProvider();
 
+    bool init(uint8_t pinBCK, uint8_t pinData, uint8_t pinWS, uint8_t pinDin, uint8_t scl = SCL, uint8_t sda = SDA);
+
     void playUrl(String url);
-    void playFile(FS fs, String path);
+    void playFile(fs::FS &fs, String path);
     void playRadio(uint16_t freq);
 
     void pause();
@@ -28,8 +44,8 @@ public:
     void stop();
     bool isPlaying();
 
-    void setVolume(uint8_t vol);
-    uint8_t getVolume();
+    void setVolume(float vol);
+    float getVolume();
 
     uint32_t getFilePosition();
     uint32_t getCurrentTime();
@@ -38,24 +54,23 @@ public:
     void loop();
 
 protected:
-
     void initI2S(uint8_t pinBCK, uint8_t pinData, uint8_t pinWS, uint8_t pinDin);
-    void initRadio();
+    void initRadio(uint8_t scl = SCL, uint8_t sda = SDA);
 
     RDA5807FP radio;
     I2SStream i2s;
     URLStream urlStream;
-    EncodedAudioStream *dec = nullptr;// Decoding stream
-    StreamCopy *copierRadio = nullptr;// copy url to decoder
-    StreamCopy *copierUrl = nullptr;  // copy url to decoder
+    EncodedAudioStream decoder; // Decoding stream
+    VolumeStream volumeStream;
+    StreamCopy copier;   // copy url to decoder
 
-    uint16_t sample_rate = 44100;
-    uint8_t channels = 2;                          // The stream will have 2 channels
+    uint16_t sample_rate = 44100; // 44.1 kHz
+    uint8_t channels = 2;         // The stream will have 2 channels
 
-    uint8_t volume = 0;
     bool playing = false;
-    PlayMode playMode = PLAY_STREAM;
-
+    Media nextMedia;
+    fs::File currentAudioFile;
+    PlayMode playMode;
 };
 
 #endif // AUDIOPROVIDER_H
