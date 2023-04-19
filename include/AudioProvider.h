@@ -4,7 +4,6 @@
 #include <FS.h>
 #include <RDA5807FP.h>
 #include <AudioTools.h>
-#include <AudioTools/VolumeStream.h>
 
 enum PlayMode
 {

@@ -2,11 +2,18 @@
 // #include <AudioCodecs/CodecMP3MAD.h>
 #include <AudioCodecs/CodecMP3Helix.h>
 
+
 AudioProvider::AudioProvider()
 {
-    // audio stream stuff
+    AudioLogger::instance().begin(Serial, AudioLogger::Warning); 
+    // setup decoder
     decoder.setOutput(&volumeStream);
-    decoder.setDecoder(new MP3DecoderHelix());
+    MP3DecoderHelix *mp3decoder = new MP3DecoderHelix();
+    mp3decoder->setMaxFrameSize(3200); // increase mp3 frame size buffer to prevent stuttering
+    decoder.setDecoder(mp3decoder);
+
+    // increase URKL Stream buffer size
+    urlStream.setReadBufferSize(2048);
 
     // setup volumeStream
     VolumeStreamConfig cfg;
@@ -70,14 +77,14 @@ bool AudioProvider::isPlaying()
 
 void AudioProvider::setVolume(float vol)
 {
-    Serial.printf("Set volume to %f\n", vol);
+    Serial.printf("Set volume to %.2g\n", vol);
     volumeStream.setVolume(vol);
 }
 
 float AudioProvider::getVolume()
 {
-    Serial.printf("Get volume ch0 %f\n", volumeStream.volume(0));
-    Serial.printf("Get volume ch1 %f\n", volumeStream.volume(1));
+    // Serial.printf("Get volume ch0 %.2f\n", volumeStream.volume(0));
+    // Serial.printf("Get volume ch1 %.2f\n", volumeStream.volume(1));
     return volumeStream.volume();
 }
 
@@ -104,6 +111,7 @@ void AudioProvider::loop()
         radio.setMute(true);
         copier.end();
         decoder.end();
+        urlStream.end();
 
         // open next media
         switch (nextMedia.type)
@@ -145,7 +153,7 @@ void AudioProvider::loop()
             Serial.printf("Playing radio %d\n", freq);
             radio.setFrequency(freq);
             radio.setMute(false);
-            copier.begin(i2s, i2s);
+            copier.begin(volumeStream, i2s);
             // set state
             playMode = PLAY_RADIO;
             playing = true;
@@ -170,14 +178,11 @@ void AudioProvider::initI2S(uint8_t pinBCK, uint8_t pinData, uint8_t pinWS, uint
 {
     // start I2S
     auto config = i2s.defaultConfig(RXTX_MODE);
-    config.sample_rate = sample_rate;
-    config.channels = channels;
-    config.bits_per_sample = 16;
-    // config.i2s_format = I2S_STD_FORMAT;
     config.pin_bck = pinBCK;
     config.pin_data = pinData;
     config.pin_ws = pinWS;
     config.pin_data_rx = pinDin;
+    config.auto_clear = true;
     i2s.begin(config);
 }
 

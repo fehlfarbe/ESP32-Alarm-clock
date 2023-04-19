@@ -14,8 +14,8 @@
 #include <ArduinoSort.h>
 #include <FS.h>
 #include <LittleFS.h>
-#include <SD.h>
 #include <SPI.h>
+#include <SD.h>
 #include <Int64String.h>
 #include <FastLED.h>
 
@@ -255,10 +255,6 @@ void setup()
         1,                             /* Priority of the task */
         &pTask,                        /* Task handle. */
         0);                            /* Core where the task should run */
-
-    // audio.playFile(SD, "/songs/URSULA - URSULA - 11 Auf der anderen Seite.mp3");
-    // audio.playUrl("http://stream.srg-ssr.ch/m/rsj/mp3_128");
-    // audio.playRadio(10240);
 }
 
 void loop()
@@ -271,7 +267,7 @@ void loop()
     //     // audio.playFile(fsSongs, "/songs/URSULA - URSULA - 11 Auf der anderen Seite.mp3");
     //     // audio.playRadio(10240);
     // }
-    // digitalWrite(LED_BUILTIN, audio.isRunning());
+    digitalWrite(LED_BUILTIN, audio.isPlaying());
 }
 
 void checkAlarmTask(void *parameter)
