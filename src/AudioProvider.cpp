@@ -9,11 +9,11 @@ AudioProvider::AudioProvider()
     // setup decoder
     decoder.setOutput(&volumeStream);
     MP3DecoderHelix *mp3decoder = new MP3DecoderHelix();
-    mp3decoder->setMaxFrameSize(3200); // increase mp3 frame size buffer to prevent stuttering
+    mp3decoder->setMaxFrameSize(4800); // increase mp3 frame size buffer to prevent stuttering
     decoder.setDecoder(mp3decoder);
 
     // increase URKL Stream buffer size
-    urlStream.setReadBufferSize(2048);
+    urlStream.setReadBufferSize(4096);
 
     // setup volumeStream
     VolumeStreamConfig cfg;

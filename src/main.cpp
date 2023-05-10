@@ -33,6 +33,7 @@
 #define SW0 34
 #define SW1 35
 #define SW2 39
+#define SW_WIFI_RESET SW0
 // #define LED_BUILTIN 2
 #define I2S_MUTE 2
 #define LED_STATUS 26
@@ -54,9 +55,7 @@ AudioProvider audio;
 CRGB led_status[2];
 
 // settings
-uint32_t gmt_offset_s = 0;
-uint32_t dst_offset_s = 0;
-float audio_volume = 0.f;
+Settings settings;
 
 // alarms
 #define MAX_ALARMS 100
@@ -108,7 +107,6 @@ void setLWiFiLEDState(LED_STATE state);
 bool readJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc, DeserializationError &error);
 bool writeJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc);
 
-void handleAPIConfigUpdate(AsyncWebServerRequest *request);
 void handleAPIConfig(AsyncWebServerRequest *request);
 void handleAPISongs(AsyncWebServerRequest *request);
 void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
@@ -116,7 +114,8 @@ void handleAPIPlayback(AsyncWebServerRequest *request);
 void handleAPIState(AsyncWebServerRequest *request);
 void handleOTAUpdateForm(AsyncWebServerRequest *request);
 void handleOTAUpdateResponse(AsyncWebServerRequest *request);
-void handleOTAUpdateUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
+void handleOTAUpdateUploadFirmware(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
+void handleOTAUpdateUploadFilesystem(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
 
 // setup
 void setup()
@@ -140,7 +139,7 @@ void setup()
 
     // init audio
     audio.init(I2S_BCLK, I2S_DOUT, I2S_WS, I2S_DIN, SCL, SDA);
-    // audio.setVolume(audio_volume); // 0...1
+    audio.setVolume(settings.audio_volume); // 0...1
 
     // setup display
     // display.clear();
@@ -188,7 +187,16 @@ void setup()
     // showDisplay(DisplayState::WIFI_CONNECT);
     setLWiFiLEDState(LED_STATE::STATE_WIFI_CONNECTING);
     // WiFi.onEvent( WiFiEvent );
+    // setup WiFI manager
     wifiManager.setConnectTimeout(10);
+    // setup static ip if it's set in config and SW_WIFI_RESET is not pressed
+    if (settings.staticIP)
+    {
+        Serial.printf("Found static IP config, set IP to %s\n", settings.local.toString().c_str());
+        wifiManager.setSTAStaticIPConfig(settings.local, settings.gateway, settings.subnet,
+                                         settings.primaryDNS, settings.secondaryDNS);
+    }
+    // connect to WiFi
     if (!wifiManager.autoConnect())
     {
         Serial.println("failed to connect, we should reset as see if it connects");
@@ -197,16 +205,13 @@ void setup()
     setLWiFiLEDState(LED_STATE::STATE_WIFI_CONNECTED);
 
     // setup mDNS
-    char hostname[20];
-    uint64_t chipid = ESP.getEfuseMac();
-    sprintf(hostname, "esp32-%04X%08X", (uint16_t)(chipid >> 32), (uint32_t)chipid);
-    if (!MDNS.begin(hostname))
+    if (!MDNS.begin(settings.hostname.c_str()))
     {
         Serial.println("Error setting up MDNS responder!");
     }
     else
     {
-        Serial.printf("mDNS responder started with hostname %s.local\n", hostname);
+        Serial.printf("mDNS responder started with hostname %s.local\n", settings.hostname);
     }
 
     // // show IP
@@ -244,7 +249,8 @@ void setup()
 
     // Simple Firmware Update
     server.on("/update", HTTP_GET, handleOTAUpdateForm);
-    server.on("/update", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUpload);
+    server.on("/update_firmware", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUploadFirmware);
+    server.on("/update_filesystem", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUploadFilesystem);
 
     // setup parallel task
     xTaskCreatePinnedToCore(
@@ -319,7 +325,7 @@ void loadSettings(fs::FS &fs)
     }
     else
     {
-        // load sensor settings
+        // load alarm settings
         JsonArray alarmsJSON = doc["alarms"];
         size_t i = 0;
         for (auto a : alarmsJSON)
@@ -356,18 +362,57 @@ void loadSettings(fs::FS &fs)
 
         if (general.containsKey("audio_volume"))
         {
-            audio_volume = general["audio_volume"].as<float>();
-            audio.setVolume(audio_volume);
+            settings.audio_volume = general["audio_volume"].as<float>();
+            audio.setVolume(settings.audio_volume);
         }
 
         if (general.containsKey("gmt_offset"))
         {
-            gmt_offset_s = (uint32_t)general["gmt_offset"];
+            settings.gmt_offset_s = (uint32_t)general["gmt_offset"];
         }
 
         if (general.containsKey("dst_offset"))
         {
-            dst_offset_s = (uint32_t)general["dst_offset"];
+            settings.dst_offset_s = (uint32_t)general["dst_offset"];
+        }
+
+        // load network settings
+        auto network = doc["network"];
+        if (network.containsKey("hostname"))
+        {
+            settings.hostname = network["hostname"].as<String>();
+        }
+        else
+        {
+            // set default hostname
+            char hostname[20];
+            uint64_t chipid = ESP.getEfuseMac();
+            sprintf(hostname, "esp32-%04X%08X", (uint16_t)(chipid >> 32), (uint32_t)chipid);
+            settings.hostname = String(hostname);
+        }
+        if (network.containsKey("static_ip_enabled"))
+        {
+            settings.staticIP = network["static_ip_enabled"].as<bool>();
+        }
+        if (network.containsKey("static_ip"))
+        {
+            settings.local.fromString(network["static_ip"].as<String>());
+        }
+        if (network.containsKey("subnet"))
+        {
+            settings.subnet.fromString(network["subnet"].as<String>());
+        }
+        if (network.containsKey("gateway"))
+        {
+            settings.gateway.fromString(network["gateway"].as<String>());
+        }
+        if (network.containsKey("primary_dns"))
+        {
+            settings.primaryDNS.fromString(network["primary_dns"].as<String>());
+        }
+        if (network.containsKey("secondary_dns"))
+        {
+            settings.secondaryDNS.fromString(network["secondary_dns"].as<String>());
         }
     }
 }
@@ -438,14 +483,14 @@ bool checkPlayAlarm()
     if (alarms[alarms_next] < timeinfo && alarms[alarms_next].differenceSec(timeinfo) < 10)
     {
         Serial.println("Playing Alarm " + alarms[alarms_next].toString());
-        audio.setVolume(audio_volume);
+        audio.setVolume(settings.audio_volume);
 
         auto alarm = alarms[alarms_next];
         auto stream = alarm.getStream();
         Serial.printf("Playing %s of type %s from %s\n", alarm.name.c_str(),
                       AlarmClock::MusicStream::typeToString(stream.getType()).c_str(),
                       stream.getURL().c_str());
-        Serial.printf("Audio volume: %f\n", audio_volume);
+        Serial.printf("Audio volume: %f\n", settings.audio_volume);
 
         switch (stream.getType())
         {
@@ -542,7 +587,6 @@ void setLWiFiLEDState(LED_STATE state)
     led_status[LED_WIFI_IDX] = CHSV(state, 255, 70);
     FastLED.show();
 }
-
 /**************************************
  *
  * Print all falarms for debug reasons :)
@@ -586,7 +630,7 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
             Serial.println(file.name());
             if (levels)
             {
-                listDir(fs, (String(dirname) + String(file.name())).c_str(), levels - 1);
+                listDir(fs, (String(dirname) + String("/") + String(file.name())).c_str(), levels - 1);
             }
         }
         else
@@ -901,7 +945,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
  */
 void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
-    Serial.printf("Uploading %s (%u bytes written)\n", filename.c_str(), index);
+    Serial.printf("Uploading %s (%u bytes written, blocksize %u bytes)\n", filename.c_str(), index, len);
 
     String path = "/songs/" + filename;
 
@@ -1069,7 +1113,13 @@ void handleAPIState(AsyncWebServerRequest *request)
 
 void handleOTAUpdateForm(AsyncWebServerRequest *request)
 {
-    request->send(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
+    request->send(200, "text/html",
+                  "<form method='POST' action='/update_firmware' enctype='multipart/form-data'>"
+                  "Firmware: <input type='file' name='firmware'>"
+                  "<input type='submit' value='Update firmware'></form>"
+                  "<form method='POST' action='/update_filesystem' enctype='multipart/form-data'>"
+                  "Filesystem: <input type='file' name='filesystem'>"
+                  "<input type='submit' value='Update filesystem'></form>");
 }
 
 void handleOTAUpdateResponse(AsyncWebServerRequest *request)
@@ -1077,14 +1127,18 @@ void handleOTAUpdateResponse(AsyncWebServerRequest *request)
     bool shouldReboot = !Update.hasError();
     AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
     response->addHeader("Connection", "close");
-    request->send(response);
+    request->redirect("/");
 }
 
-void handleOTAUpdateUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+void handleOTAUpdateUploadFirmware(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
+    if(filename != "firmware.bin"){
+        return;
+    }
+
     if (!index)
     {
-        Serial.printf("Update Start: %s\n", filename.c_str());
+        Serial.printf("Update firmware start: %s\n", filename.c_str());
         //   Update.runAsync(true);
         if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
         {
@@ -1092,22 +1146,70 @@ void handleOTAUpdateUpload(AsyncWebServerRequest *request, String filename, size
         }
         else
         {
-            Serial.println("Update begin...");
+            Serial.println("Update firmware begin...");
         }
     }
     if (!Update.hasError())
     {
-        Serial.printf("writing...%d bytes\n", len);
+        float progress = (index + len) / (float)request->contentLength();
+        Serial.printf("writing...%d bytes (%d/%d, %.2f%%)\n", len, index + len, request->contentLength(), progress * 100);
         if (Update.write(data, len) != len)
         {
             Update.printError(Serial);
         }
+
+        led_status[LED_STATUS_IDX] = CHSV(map(progress * 100, 0, 100, 0, 80), 255, 70);
+        FastLED.show();
     }
     if (final)
     {
         if (Update.end(true))
         {
-            Serial.printf("Update Success: %uB\n", index + len);
+            Serial.printf("Update firmware success: %uB\n", index + len);
+            ESP.restart();
+        }
+        else
+        {
+            Update.printError(Serial);
+        }
+    }
+}
+
+void handleOTAUpdateUploadFilesystem(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+    if(filename != "littlefs.bin"){
+        return;
+    }
+
+    if (!index)
+    {
+        Serial.printf("Update filesystem start: %s\n", filename.c_str());
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN, U_SPIFFS))
+        {
+            Update.printError(Serial);
+        }
+        else
+        {
+            Serial.println("Update filesystem begin...");
+        }
+    }
+    if (!Update.hasError())
+    {
+        float progress = (index + len) / (float)request->contentLength();
+        Serial.printf("writing...%d bytes (%d/%d, %.2f%%)\n", len, index + len, request->contentLength(), progress * 100);
+        if (Update.write(data, len) != len)
+        {
+            Update.printError(Serial);
+        }
+
+        led_status[LED_STATUS_IDX] = CHSV(map(progress * 100, 0, 100, 0, 80), 255, 70);
+        FastLED.show();
+    }
+    if (final)
+    {
+        if (Update.end(true))
+        {
+            Serial.printf("Update filesystem success: %uB\n", index + len);
             ESP.restart();
         }
         else
@@ -1128,14 +1230,14 @@ time_t getNtpTime()
     if (!WiFi.isConnected())
     {
         Serial.println("WiFi not connected, cannot config time!");
-        return mktime(&timeinfo) + gmt_offset_s + dst_offset_s;
+        return mktime(&timeinfo) + settings.gmt_offset_s + settings.dst_offset_s;
     }
     // configTime(-3600, -3600, "69.10.161.7");
 
     Serial.printf("Update time with GMT+%02d and DST: %d\n",
-                  gmt_offset_s / 3600, dst_offset_s / 3600);
+                  settings.gmt_offset_s / 3600, settings.dst_offset_s / 3600);
 
-    configTime(gmt_offset_s, dst_offset_s, "0.de.pool.ntp.org", "1.de.pool.ntp.org", "69.10.161.7");
+    configTime(settings.gmt_offset_s, settings.dst_offset_s, "0.de.pool.ntp.org", "1.de.pool.ntp.org", "69.10.161.7");
 
     if (!getLocalTime(&timeinfo))
     {
@@ -1146,7 +1248,7 @@ time_t getNtpTime()
         Serial.print("Synced time to: ");
         Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
     }
-    return mktime(&timeinfo) + gmt_offset_s + dst_offset_s;
+    return mktime(&timeinfo) + settings.gmt_offset_s + settings.dst_offset_s;
 }
 
 /**************************************
