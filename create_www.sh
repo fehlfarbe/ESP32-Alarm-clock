@@ -24,6 +24,11 @@ cat www/js/script.js | gzip -9 > data/www/js/script.js.gz
 cat www/css/layout.css | gzip -9 > data/www/css/layout.css.gz
 cat www/index.htm | gzip > data/www/index.htm.gz
 
+# brotli www/js/deps.min.js -o data/www/js/deps.min.js.br
+# brotli www/js/script.js -o data/www/js/script.js.br
+# brotli www/css/layout.css -o data/www/css/layout.css.br
+# brotli www/index.htm -o data/www/index.htm.br
+
 echo "done!"
 # copy and zip JS/CSS files
 # for d in js css

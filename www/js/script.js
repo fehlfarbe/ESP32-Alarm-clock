@@ -572,6 +572,6 @@ function SettingsViewModel() {
 }
 
 var model = new SettingsViewModel();
-window.setInterval(model.playbackUpdate, 1000);
-// model.playbackUpdate();
+// window.setInterval(model.playbackUpdate, 1000);
+model.playbackUpdate();
 ko.applyBindings(model);

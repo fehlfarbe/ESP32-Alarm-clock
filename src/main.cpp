@@ -235,7 +235,7 @@ void setup()
 
     // HTTP Server
     server.begin();
-    server.serveStatic("/", fsWWW, "/www/");
+    server.serveStatic("/", fsWWW, "/www/").setCacheControl("max-age=31536000");
     server.on("/api/config", handleAPIConfig);
     // server.on("/api/config/update", HTTP_POST, handleAPIConfigUpdate);
     server.on("/api/state", handleAPIState);
@@ -1126,8 +1126,9 @@ void handleOTAUpdateResponse(AsyncWebServerRequest *request)
 {
     bool shouldReboot = !Update.hasError();
     AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
-    response->addHeader("Connection", "close");
-    request->redirect("/");
+    response->addHeader("Refresh", "20");  
+    response->addHeader("Location", "/");
+    request->send(response);
 }
 
 void handleOTAUpdateUploadFirmware(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
