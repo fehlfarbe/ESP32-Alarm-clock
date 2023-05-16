@@ -10,7 +10,7 @@ Photos of older PCB version:
 ![photo](doc/photo01.jpg "Photo of old PCB top")
 ![photo](doc/photo02.jpg "Photo of old PCB bottom")
 
-## Featues
+## Features
 
 - designed for ESP32 microcontrollers
 - plays audio from different sources:
@@ -50,10 +50,16 @@ The KiCAD project and gerber files are available at `hardware/pcb/mp3alarm`
 
 ### WiFiLED States
 
-- ![red](https://via.placeholder.com/15/f03c15/000000?text=+) no WiFi connection
-- ![yellow](https://via.placeholder.com/15/ffff00/000000?text=+) connecting to WiFi
+At boot:
+
+- ![red](https://via.placeholder.com/15/f03c15/000000?text=+) ESP32 boots
+- ![yellow](https://via.placeholder.com/15/ffff00/000000?text=+) connecting to WiFi 
 - ![green](https://via.placeholder.com/15/00ff00/000000?text=+) connected
 - ![blue](https://via.placeholder.com/15/00aaff/000000?text=+) accesspoint active
+
+After boot:
+
+-  ![red](https://via.placeholder.com/15/f03c15/000000?text=+)...![green](https://via.placeholder.com/15/00ff00/000000?text=+) WiFi signal strength from bad to good
 
 ## Installation
 
