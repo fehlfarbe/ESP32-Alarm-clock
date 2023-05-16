@@ -2,14 +2,19 @@
 #define MUSICSTREAM_H
 #include <Arduino.h>
 
-enum MusicType {
-    UNKNOWN,
-    FILESYSTEM,
-    STREAM,
-    FM
-};
+namespace AlarmClock
+{
 
-class MusicStream {
+    enum MusicType
+    {
+        UNKNOWN,
+        FILESYSTEM,
+        STREAM,
+        FM
+    };
+
+    class MusicStream
+    {
     public:
         MusicStream();
         MusicStream(String name, String url, MusicType type);
@@ -25,13 +30,12 @@ class MusicStream {
         String getURL();
         uint16_t getFMFrequency();
         MusicType getType();
-    
+
     private:
         String name;
         String url;
         MusicType type;
-        
-};
+    };
+}
 
-
-#endif //MUSICSTREAM_H
+#endif // MUSICSTREAM_H

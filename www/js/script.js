@@ -1,5 +1,13 @@
 var english = {
     settings: "Settings",
+    network_settings: "Network settings",
+    network_hostname: "Hostname",
+    network_static_enabled: "Static IP",
+    network_static_ip: "Static IP",
+    network_subnet: "Subnet mask",
+    network_gateway: "Gateway",
+    network_primary_dns: "Primary DNS",
+    network_secondary_dns: "Secondary DNS",
     timezone: "Timezone",
     dst: "DST",
     alarm_volume: "Alarm audio volume",
@@ -31,6 +39,14 @@ var english = {
 
 var german = {
     settings: "Einstellungen",
+    network_settings: "Netzwerkeinstellungen",
+    network_hostname: "Hostname",
+    network_static_enabled: "Statische IP",
+    network_static_ip: "Statische IP",
+    network_subnet: "Subnetzmaske",
+    network_gateway: "Gateway",
+    network_primary_dns: "Priärer DNS",
+    network_secondary_dns: "Secondärer DNS",
     timezone: "Zeitzone",
     dst: "Sommerzeit",
     alarm_volume: "Alarm Lautstärke",
@@ -72,6 +88,11 @@ function getLanguage(){
 function modalAlert(msg){
     $("#modalAlertBody").html(msg);
     $('#modalAlert').modal();
+}
+
+function modalSuccess(msg){
+    $("#modalSuccessBody").html(msg);
+    $('#modalSuccess').modal();
 }
 
 
@@ -173,6 +194,17 @@ function Song(name, url, size, type) {
         }, this);
 }
 
+function Network(hostname, static_ip_enabled, static_ip, subnet, gateway, primary_dns, secondary_dns) {
+    var self = this;
+    self.hostname = ko.observable(hostname);
+    self.static_ip_enabled = ko.observable(static_ip_enabled);
+    self.static_ip = ko.observable(static_ip);
+    self.subnet = ko.observable(subnet);
+    self.gateway = ko.observable(gateway);
+    self.primary_dns = ko.observable(primary_dns);
+    self.secondary_dns = ko.observable(secondary_dns);
+}
+
 function Playback(song, playing, current, position, duration, volume) {
     var self = this;
     self.song = ko.observable(song);
@@ -244,6 +276,7 @@ function SettingsViewModel() {
 
     // get current config
     self.general = ko.observable(new General(0, 0, 0));
+    self.network = ko.observable(new Network(false));
     self.alarms = ko.observableArray([]);
 
     $.getJSON("/api/config", function (allData) {
@@ -251,6 +284,20 @@ function SettingsViewModel() {
         self.general(new General(allData.general.gmt_offset,
             allData.general.dst_offset,
             allData.general.audio_volume));
+        // network
+        if(allData.network){
+            self.network(new Network(
+                allData.network.hostname,
+                allData.network.static_ip_enabled,
+                allData.network.static_ip,
+                allData.network.subnet,
+                allData.network.gateway,
+                allData.network.primary_dns,
+                allData.network.secondary_dns,
+            ));
+        } else {
+            self.network(new Network());
+        }
 
         // alarms
         var mappedAlarms = $.map(allData.alarms, function (a) {
@@ -300,6 +347,7 @@ function SettingsViewModel() {
     self.save = function () {
         var data = {};
         data.general = self.general();
+        data.network = self.network();
         data.alarms = [];
         self.alarms().forEach(a => {
             data.alarms.push(a.exportFormat());
@@ -313,7 +361,7 @@ function SettingsViewModel() {
                 console.log("sent!");
             })
             .done(function (resp) {
-                modalAlert("Saved config!");
+                modalSuccess("Saved config!");
             })
             .fail(function (e) {
                 console.log(e);
@@ -405,7 +453,7 @@ function SettingsViewModel() {
         console.log("New volume: ", value);
         var req = {
             "action": "volume",
-            "volume": value
+            "volume": parseFloat(value)
         };
 
         playbackCommand(req).fail(function (e) {
@@ -524,6 +572,6 @@ function SettingsViewModel() {
 }
 
 var model = new SettingsViewModel();
-window.setInterval(model.playbackUpdate, 1000);
-// model.playbackUpdate();
+// window.setInterval(model.playbackUpdate, 1000);
+model.playbackUpdate();
 ko.applyBindings(model);

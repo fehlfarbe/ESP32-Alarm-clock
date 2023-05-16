@@ -1,83 +1,86 @@
 #include <MusicStream.h>
 
-MusicStream::MusicStream()
+namespace AlarmClock
 {
-}
-
-MusicStream::MusicStream(String name, String url, MusicType type) : name(name), url(url), type(type)
-{
-}
-
-MusicStream::~MusicStream()
-{
-}
-
-String MusicStream::toString()
-{
-    return name + " (" + typeToString(type) + ")";
-}
-
-String MusicStream::typeToString(MusicType t)
-{
-    switch (t)
+    MusicStream::MusicStream() : name(""), url(""), type(MusicType::UNKNOWN)
     {
-    case MusicType::FILESYSTEM:
-        return "file";
-    case MusicType::STREAM:
-        return "stream";
-    case MusicType::FM:
-        return "fm";
-    case MusicType::UNKNOWN:
-        break;
     }
 
-    return "unknown";
-}
-
-MusicType MusicStream::stringToType(String t)
-{
-    if (t == "file")
+    MusicStream::MusicStream(String name, String url, MusicType type) : name(name), url(url), type(type)
     {
-        return MusicType::FILESYSTEM;
-    }
-    if (t == "stream")
-    {
-        return MusicType::STREAM;
-    }
-    if (t == "fm")
-    {
-        return MusicType::FM;
     }
 
-    return MusicType::UNKNOWN;
-}
+    MusicStream::~MusicStream()
+    {
+    }
 
-bool MusicStream::isFile()
-{
-    return type == MusicType::FILESYSTEM;
-}
+    String MusicStream::toString()
+    {
+        return name + " (" + typeToString(type) + ")";
+    }
 
-bool MusicStream::isStream()
-{
-    return type == MusicType::STREAM;
-}
+    String MusicStream::typeToString(MusicType t)
+    {
+        switch (t)
+        {
+        case MusicType::FILESYSTEM:
+            return "file";
+        case MusicType::STREAM:
+            return "stream";
+        case MusicType::FM:
+            return "fm";
+        case MusicType::UNKNOWN:
+            break;
+        }
 
-bool MusicStream::isFM()
-{
-    return type == MusicType::FM;
-}
+        return "unknown";
+    }
 
-String MusicStream::getURL()
-{
-    return url;
-}
+    MusicType MusicStream::stringToType(String t)
+    {
+        if (t == "file")
+        {
+            return MusicType::FILESYSTEM;
+        }
+        if (t == "stream")
+        {
+            return MusicType::STREAM;
+        }
+        if (t == "fm")
+        {
+            return MusicType::FM;
+        }
 
-uint16_t MusicStream::getFMFrequency()
-{
-    return (uint16_t)(url.toFloat()*100);
-}
+        return MusicType::UNKNOWN;
+    }
 
-MusicType MusicStream::getType()
-{
-    return type;
+    bool MusicStream::isFile()
+    {
+        return type == MusicType::FILESYSTEM;
+    }
+
+    bool MusicStream::isStream()
+    {
+        return type == MusicType::STREAM;
+    }
+
+    bool MusicStream::isFM()
+    {
+        return type == MusicType::FM;
+    }
+
+    String MusicStream::getURL()
+    {
+        return url;
+    }
+
+    uint16_t MusicStream::getFMFrequency()
+    {
+        return (uint16_t)(url.toFloat() * 100);
+    }
+
+    MusicType MusicStream::getType()
+    {
+        return type;
+    }
 }
