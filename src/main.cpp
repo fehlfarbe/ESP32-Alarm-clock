@@ -18,6 +18,7 @@
 #include <SD.h>
 #include <Int64String.h>
 #include <FastLED.h>
+#include <TM1637Display.h>
 
 #include "AlarmSettings.h"
 #include "MusicStream.h"
@@ -48,6 +49,7 @@
 
 // Global variables
 AudioProvider audio;
+unsigned long startTime = millis();
 
 // LED
 #define LED_STATUS_IDX 0
@@ -77,7 +79,7 @@ File fsUploadFile;
 AsyncWiFiManager wifiManager(&server, &dns);
 
 // Display
-// TM1637Display display(CLK, DIO);
+TM1637Display display(CLK, DIO);
 
 // parallel task
 TaskHandle_t pTask;
@@ -101,7 +103,7 @@ time_t getNtpTime();
 void printTime(struct tm);
 bool compareAlarm(AlarmClock::AlarmSettings first, AlarmClock::AlarmSettings second);
 bool checkPlayAlarm();
-// void showDisplay(DisplayState state);
+void showDisplay(DisplayState state);
 void setLWiFiLEDState(LED_STATE state);
 
 bool readJSONFile(fs::FS &fs, String file, DynamicJsonDocument &doc, DeserializationError &error);
@@ -142,8 +144,8 @@ void setup()
     audio.setVolume(settings.audio_volume); // 0...1
 
     // setup display
-    // display.clear();
-    // display.setBrightness(3, true);
+    display.clear();
+    display.setBrightness(3, true);
 
     // Initialize LITTLEFS
     if (!fsWWW.begin(false, "/littlefs", 10))
@@ -157,7 +159,7 @@ void setup()
     // Initialize SD
     while (!SD.begin())
     {
-        // showDisplay(DisplayState::SD_ERR);
+        showDisplay(DisplayState::SD_ERR);
         Serial.println("Card Mount Failed");
         delay(1000);
         while (true)
@@ -168,7 +170,7 @@ void setup()
     if (cardType == CARD_NONE)
     {
         Serial.println("No SD card attached");
-        // showDisplay(DisplayState::SD_ERR);
+        showDisplay(DisplayState::SD_ERR);
         while (true)
             ;
     }
@@ -184,7 +186,7 @@ void setup()
     //     Serial.println("Reset WiFi setting...");
     //     wifiManager.resetSettings();
     // }
-    // showDisplay(DisplayState::WIFI_CONNECT);
+    showDisplay(DisplayState::WIFI_CONNECT);
     setLWiFiLEDState(LED_STATE::STATE_WIFI_CONNECTING);
     // WiFi.onEvent( WiFiEvent );
     // setup WiFI manager
@@ -218,7 +220,7 @@ void setup()
     Serial.println(WiFi.localIP().toString());
 
     // // sync time
-    // showDisplay(DisplayState::SYNC);
+    showDisplay(DisplayState::SYNC);
     setSyncProvider(getNtpTime);
 
     // print current time
@@ -284,7 +286,7 @@ void checkAlarmTask(void *parameter)
         // check for alarm and play
         checkPlayAlarm();
         // update display time
-        // showDisplay(DisplayState::TIME);
+        showDisplay(DisplayState::TIME);
         // show wifi strength
         auto rssi = map(abs(WiFi.RSSI()), 50, 90, 96, 0);
         // Serial.printf("RSSI %d\n", rssi);
@@ -295,7 +297,7 @@ void checkAlarmTask(void *parameter)
         // Serial.printf("Free stack %d\n", uxTaskGetStackHighWaterMark(NULL));
         if (millis() - lastRSSI > 1000)
         {
-            Serial.printf("RSSI %d, heap %d, stack %d\n", WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL));
+            Serial.printf("Uptime %ds RSSI %d, heap %d, stack %d\n", (millis()-startTime) / 1000, WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL));
             lastRSSI = millis();
         }
 
@@ -363,7 +365,6 @@ void loadSettings(fs::FS &fs)
         if (general.containsKey("audio_volume"))
         {
             settings.audio_volume = general["audio_volume"].as<float>();
-            audio.setVolume(settings.audio_volume);
         }
 
         if (general.containsKey("gmt_offset"))
@@ -520,62 +521,62 @@ bool checkPlayAlarm()
  *
  * @param state
  */
-// void showDisplay(DisplayState state)
-// {
-//     struct tm timeinfo;
-//     const uint8_t sync[] = {
-//         SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
-//         SEG_F | SEG_G | SEG_B | SEG_C,         // Y
-//         SEG_E | SEG_G | SEG_C,                 // n
-//         SEG_E | SEG_G | SEG_D                  // c
-//     };
-//     const uint8_t conn[] = {
-//         SEG_E | SEG_G | SEG_D,         // c
-//         SEG_E | SEG_G | SEG_D | SEG_C, // o
-//         SEG_E | SEG_G | SEG_C,         // n
-//         SEG_E | SEG_G | SEG_C          // n
-//     };
-//     const uint8_t sd_err[] = {
-//         SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
-//         SEG_E | SEG_G | SEG_D | SEG_C | SEG_B, // d
-//         0,
-//         0};
-//     const uint8_t ap[] = {
-//         SEG_A | SEG_F | SEG_B | SEG_B | SEG_E | SEG_C, // A
-//         SEG_A | SEG_F | SEG_G | SEG_B | SEG_E,         // P
-//         0,
-//         0};
+void showDisplay(DisplayState state)
+{
+    struct tm timeinfo;
+    const uint8_t sync[] = {
+        SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
+        SEG_F | SEG_G | SEG_B | SEG_C,         // Y
+        SEG_E | SEG_G | SEG_C,                 // n
+        SEG_E | SEG_G | SEG_D                  // c
+    };
+    const uint8_t conn[] = {
+        SEG_E | SEG_G | SEG_D,         // c
+        SEG_E | SEG_G | SEG_D | SEG_C, // o
+        SEG_E | SEG_G | SEG_C,         // n
+        SEG_E | SEG_G | SEG_C          // n
+    };
+    const uint8_t sd_err[] = {
+        SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
+        SEG_E | SEG_G | SEG_D | SEG_C | SEG_B, // d
+        0,
+        0};
+    const uint8_t ap[] = {
+        SEG_A | SEG_F | SEG_B | SEG_B | SEG_E | SEG_C, // A
+        SEG_A | SEG_F | SEG_G | SEG_B | SEG_E,         // P
+        0,
+        0};
 
-//     switch (state)
-//     {
-//     case DisplayState::WIFI_CONNECT:
-//         display.setSegments(conn);
-//         break;
-//     case DisplayState::WIFI_CONNECTED:
-//         break;
-//     case DisplayState::WIFI_PORTAL:
-//         display.setSegments(ap);
-//         break;
-//     case DisplayState::SYNC:
-//         display.setSegments(sync);
-//         break;
-//     case DisplayState::TIME:
-//         if (!getLocalTime(&timeinfo, 1000))
-//         {
-//             display.showNumberDec(0, true);
-//         }
-//         else
-//         {
-//             display.showNumberDecEx(timeinfo.tm_hour * 100 + timeinfo.tm_min, 0b01000000, true);
-//         }
-//         break;
-//     case DisplayState::SD_ERR:
-//         display.setSegments(sd_err);
-//         break;
-//     default:
-//         break;
-//     }
-// }
+    switch (state)
+    {
+    case DisplayState::WIFI_CONNECT:
+        display.setSegments(conn);
+        break;
+    case DisplayState::WIFI_CONNECTED:
+        break;
+    case DisplayState::WIFI_PORTAL:
+        display.setSegments(ap);
+        break;
+    case DisplayState::SYNC:
+        display.setSegments(sync);
+        break;
+    case DisplayState::TIME:
+        if (!getLocalTime(&timeinfo, 1000))
+        {
+            display.showNumberDec(0, true);
+        }
+        else
+        {
+            display.showNumberDecEx(timeinfo.tm_hour * 100 + timeinfo.tm_min, 0b01000000, true);
+        }
+        break;
+    case DisplayState::SD_ERR:
+        display.setSegments(sd_err);
+        break;
+    default:
+        break;
+    }
+}
 
 /**************************************
  *
