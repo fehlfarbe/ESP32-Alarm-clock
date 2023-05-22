@@ -297,7 +297,7 @@ void checkAlarmTask(void *parameter)
         // Serial.printf("Free stack %d\n", uxTaskGetStackHighWaterMark(NULL));
         if (millis() - lastRSSI > 1000)
         {
-            Serial.printf("Uptime %ds RSSI %d, heap %d, stack %d\n", (millis()-startTime) / 1000, WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL));
+            Serial.printf("Uptime %ds RSSI %d, heap %d, stack %d\n", (millis() - startTime) / 1000, WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL));
             lastRSSI = millis();
         }
 
@@ -856,9 +856,14 @@ void handleAPISongs(AsyncWebServerRequest *request)
                         return;
                     }
                 }
-                else if (!fsSongs.remove(url))
+                else
                 {
-                    request->send(500, "application/json", "{\"error\" : \"cannot remove song\"");
+                    url = String("/songs/") + url;
+                    Serial.printf("Delete song %s (exists: %d)\n", url.c_str(), fsSongs.exists(url));
+                    if (!fsSongs.remove(url))
+                    {
+                        request->send(500, "application/json", "{\"error\" : \"cannot remove song\"");
+                    }
                 }
             }
             else if (action == "addStream")
@@ -1127,14 +1132,15 @@ void handleOTAUpdateResponse(AsyncWebServerRequest *request)
 {
     bool shouldReboot = !Update.hasError();
     AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
-    response->addHeader("Refresh", "20");  
+    response->addHeader("Refresh", "20");
     response->addHeader("Location", "/");
     request->send(response);
 }
 
 void handleOTAUpdateUploadFirmware(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
-    if(filename != "firmware.bin"){
+    if (filename != "firmware.bin")
+    {
         return;
     }
 
@@ -1179,7 +1185,8 @@ void handleOTAUpdateUploadFirmware(AsyncWebServerRequest *request, String filena
 
 void handleOTAUpdateUploadFilesystem(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
-    if(filename != "littlefs.bin"){
+    if (filename != "littlefs.bin")
+    {
         return;
     }
 

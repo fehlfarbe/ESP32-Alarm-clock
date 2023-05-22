@@ -384,7 +384,7 @@ function SettingsViewModel() {
                 console.log("sent ", req);
             })
             .done(function (resp) {
-                modalAlert("Deleted song!");
+                modalSuccess("Deleted song!");
                 self.songs.remove(file)
             })
             .fail(function (e) {
