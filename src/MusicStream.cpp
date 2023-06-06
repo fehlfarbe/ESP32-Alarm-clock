@@ -71,6 +71,9 @@ namespace AlarmClock
 
     String MusicStream::getURL()
     {
+        if(type == MusicType::FILESYSTEM && !url.startsWith("/songs/")){
+            return String("/songs/") + url;
+        }
         return url;
     }
 

@@ -484,6 +484,9 @@ bool checkPlayAlarm()
     if (alarms[alarms_next] < timeinfo && alarms[alarms_next].differenceSec(timeinfo) < 10)
     {
         Serial.println("Playing Alarm " + alarms[alarms_next].toString());
+
+        // stop current playback and set audio volume
+        audio.stop();
         audio.setVolume(settings.audio_volume);
 
         auto alarm = alarms[alarms_next];
