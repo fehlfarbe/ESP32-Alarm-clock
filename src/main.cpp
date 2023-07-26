@@ -32,7 +32,7 @@
 #define I2S_DIN 35
 
 #define SW0 34
-#define SW1 35
+#define SW1 36
 #define SW2 39
 #define SW_WIFI_RESET SW0
 // #define LED_BUILTIN 2
@@ -292,6 +292,12 @@ void checkAlarmTask(void *parameter)
         // Serial.printf("RSSI %d\n", rssi);
         led_status[LED_WIFI_IDX] = CHSV(rssi, 255, 70);
         FastLED.show();
+
+        // check buttons
+        if(digitalRead(SW1) == LOW){
+            Serial.printf("Button SW1 pressed, stopping music.\n");
+            audio.pause();
+        }
 
         // Serial.printf("Free heap %d\n", ESP.getFreeHeap());
         // Serial.printf("Free stack %d\n", uxTaskGetStackHighWaterMark(NULL));
@@ -1027,7 +1033,12 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
             if (action == "play")
             {
                 String url = doc["url"];
-                Serial.printf("Playing song %s\n", url.c_str());
+                float volume = doc["volume"];
+                Serial.printf("Playing song %s with volume %f\n", url.c_str(), volume);
+                // first stop current audio and set volume
+                audio.stop();
+                audio.setVolume(volume);
+                // play media
                 if (url.startsWith("http"))
                 {
                     audio.playUrl(url);

@@ -65,6 +65,7 @@ protected:
 
     uint16_t sample_rate = 44100; // 44.1 kHz
     uint8_t channels = 2;         // The stream will have 2 channels
+    float volume = 0.f;           // volume in VolumeStream has bug
 
     bool playing = false;
     Media nextMedia;

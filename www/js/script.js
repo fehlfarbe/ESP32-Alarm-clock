@@ -33,7 +33,7 @@ var english = {
     thursday: "Thursday",
     friday: "Friday",
     saturday: "Saturday",
-    sunday: "sunday",
+    sunday: "Sunday",
     fm_frequency: "frequency"
 }
 
@@ -213,6 +213,19 @@ function Playback(song, playing, current, position, duration, volume) {
     self.position = ko.observable(position);
     self.duration = ko.observable(duration);
     self.volume = ko.observable(volume);
+
+    self.volume.subscribe(function (value) {
+        console.log("New volume: ", value);
+        var req = {
+            "action": "volume",
+            "volume": parseFloat(value)
+        };
+
+        playbackCommand(req).fail(function (e) {
+            console.log(e);
+            modalAlert("Error: " + e.responseText);
+        });
+    });
 
     self.fmt_time = function (s) {
         var hour = parseInt(s / 3600);
@@ -401,12 +414,14 @@ function SettingsViewModel() {
         } else {
             song = file.url();
         }
+        var volume = self.playback().volume();
 
-        console.log("Play ", song)
+        console.log("Play ", song, " with volume ", volume)
 
         var req = {
             "action": "play",
-            "url": song
+            "url": song,
+            "volume": volume
         };
 
         playbackCommand(req).done(function (resp) {
@@ -448,19 +463,6 @@ function SettingsViewModel() {
 
     // Playback
     self.selectedPlayback = ko.observable();
-    self.volume = ko.observable(10);
-    self.volume.subscribe(function (value) {
-        console.log("New volume: ", value);
-        var req = {
-            "action": "volume",
-            "volume": parseFloat(value)
-        };
-
-        playbackCommand(req).fail(function (e) {
-            console.log(e);
-            modalAlert("Error: " + e.responseText);
-        });
-    });
 
     // new song
     self.streamName = ko.observable();

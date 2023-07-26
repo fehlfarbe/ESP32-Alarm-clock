@@ -78,6 +78,7 @@ bool AudioProvider::isPlaying()
 void AudioProvider::setVolume(float vol)
 {
     Serial.printf("Set volume to %.2g\n", vol);
+    volume = vol;
     volumeStream.setVolume(vol);
 }
 
@@ -85,7 +86,7 @@ float AudioProvider::getVolume()
 {
     // Serial.printf("Get volume ch0 %.2f\n", volumeStream.volume(0));
     // Serial.printf("Get volume ch1 %.2f\n", volumeStream.volume(1));
-    return volumeStream.volume();
+    return volume;
 }
 
 uint32_t AudioProvider::getFilePosition()
