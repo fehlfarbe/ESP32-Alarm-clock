@@ -15,7 +15,7 @@
 #include <FS.h>
 #include <LittleFS.h>
 #include <SPI.h>
-#include <SD.h>
+#include <SD_MMC.h>
 #include <Int64String.h>
 #include <FastLED.h>
 #include <TM1637Display.h>
@@ -26,26 +26,34 @@
 #include "utils.h"
 
 // Digital I/O used
-#define I2S_DOUT 25
-#define I2S_BCLK 4
-#define I2S_WS 27
-#define I2S_DIN 35
+#define I2S_DOUT 2
+#define I2S_BCLK 1
+#define I2S_WS 42
+#define I2S_DIN 9
 
-#define SW0 34
-#define SW1 36
-#define SW2 39
+// SD_MMC
+#define SD_MMC_CLK 21
+#define SD_MMC_CMD 47
+#define SD_MMC_D0 14
+#define SD_MMC_D1 13
+#define SD_MMC_D2 45
+#define SD_MMC_D3 48
+
+#define SW0 4
+#define SW1 38
+#define SW2 7
 #define SW_WIFI_RESET SW0
 // #define LED_BUILTIN 2
-#define I2S_MUTE 2
-#define LED_STATUS 26
+#define I2S_MUTE 46
+#define LED_STATUS 3
 
 // Display and I2C
-#define CLK 16
-#define DIO 17
-// #define SCL 22
-// #define SDA 21
+#define CLK 5
+#define DIO 6
+#define SCL 10
+#define SDA 11
 
-#define JSON_BUFFER 2048
+#define JSON_BUFFER 2048*5
 
 // Global variables
 AudioProvider audio;
@@ -66,8 +74,8 @@ size_t alarms_size = 0;
 size_t alarms_next = 0;
 
 // data sources
-fs::FS fsSongs = SD;
-fs::FS fsConfig = SD;
+fs::FS fsSongs = SD_MMC;
+fs::FS fsConfig = SD_MMC;
 auto fsWWW = LittleFS;
 
 // WebServer
@@ -131,10 +139,12 @@ void setup()
     // setup LEDs
     FastLED.addLeds<NEOPIXEL, LED_STATUS>(led_status, 2);
     setLWiFiLEDState(LED_STATE::STATE_INIT);
+    led_status[LED_STATUS_IDX] = CHSV(HUE_YELLOW, 255, 70);
+    FastLED.show();
 
     // setup serial
     Serial.begin(115200);
-    delay(1000);
+    while(!Serial);
 
     // setup audio
     Serial.println("Setup I2S output");
@@ -157,16 +167,19 @@ void setup()
     listDir(fsWWW, "/", 5);
 
     // Initialize SD
-    while (!SD.begin())
+    SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0, SD_MMC_D1, SD_MMC_D2, SD_MMC_D3);
+    while (!SD_MMC.begin("/sdcad", false, false, 20000))
     {
         showDisplay(DisplayState::SD_ERR);
         Serial.println("Card Mount Failed");
+        led_status[LED_STATUS_IDX] = CHSV(0, 255, 70);
+        FastLED.show();
         delay(1000);
         while (true)
             ;
     }
 
-    uint8_t cardType = SD.cardType();
+    uint8_t cardType = SD_MMC.cardType();
     if (cardType == CARD_NONE)
     {
         Serial.println("No SD card attached");
@@ -175,7 +188,7 @@ void setup()
             ;
     }
     Serial.println("Files on SD:");
-    listDir(SD, "/", 5);
+    listDir(SD_MMC, "/", 5);
 
     // load config
     loadSettings(fsConfig);
@@ -275,7 +288,7 @@ void loop()
     //     // audio.playFile(fsSongs, "/songs/URSULA - URSULA - 11 Auf der anderen Seite.mp3");
     //     // audio.playRadio(10240);
     // }
-    digitalWrite(LED_BUILTIN, audio.isPlaying());
+    // digitalWrite(LED_BUILTIN, audio.isPlaying());
 }
 
 void checkAlarmTask(void *parameter)
@@ -960,7 +973,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
  */
 void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
-    Serial.printf("Uploading %s (%u bytes written, blocksize %u bytes)\n", filename.c_str(), index, len);
+    // Serial.printf("Uploading %s (%u bytes written, blocksize %u bytes)\n", filename.c_str(), index, len);
 
     String path = "/songs/" + filename;
 
@@ -981,10 +994,7 @@ void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_
     }
 
     // write data
-    for (size_t i = 0; i < len; i++)
-    {
-        fsUploadFile.write(data[i]);
-    }
+    fsUploadFile.write(data, len);
 
     // close file
     if (final)
@@ -1119,8 +1129,8 @@ void handleAPIState(AsyncWebServerRequest *request)
     doc["wifi"] = WiFi.RSSI();
     doc["flash_used"] = fsWWW.usedBytes();
     doc["flash_total"] = fsWWW.totalBytes();
-    doc["sd_used"] = int64String(SD.usedBytes());
-    doc["sd_total"] = int64String(SD.totalBytes());
+    doc["sd_used"] = int64String(SD_MMC.usedBytes());
+    doc["sd_total"] = int64String(SD_MMC.totalBytes());
     doc["cpu_frequ"] = ESP.getCpuFreqMHz();
     doc["alarm_next"] = alarms[alarms_next].toString();
 
