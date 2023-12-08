@@ -140,7 +140,6 @@ void setup()
 
     // setup serial
     Serial.begin(115200);
-    delay(5000);
     while (!Serial)
         ;
 
@@ -219,26 +218,31 @@ void setup()
     showDisplay(DisplayState::WIFI_CONNECT);
     // WiFi.onEvent( WiFiEvent );
     // setup WiFI manager
-    wifiManager.setConnectTimeout(10);
+    // wifiManager.setConnectTimeout(10);
     wifiManager.setAPCallback(configModeCallback);
-    // setup static ip if it's set in config and SW_WIFI_RESET is not pressed
-    if (config.global.isStaticIPEnabled)
-    {
-        Serial.printf("Found static IP config, set IP to %s\n", config.global.local.toString().c_str());
-        wifiManager.setSTAStaticIPConfig(config.global.local, config.global.gateway, config.global.subnet,
-                                         config.global.primaryDNS, config.global.secondaryDNS);
-    }
     // connect to WiFi
     if (digitalRead(SW1) == LOW)
     {
         Serial.println("Starting AP...");
         setLWiFiLEDState(LED_STATE::STATE_WIFI_AP);
+        config.global.isStaticIPEnabled = false; // disable static ip settings
+        wifiManager.resetSettings();
         wifiManager.startConfigPortal(config.global.hostname.c_str());
     }
-    else if (!wifiManager.autoConnect())
+    else
     {
-        Serial.println("failed to connect, we should reset as see if it connects");
-        setLWiFiLEDState(LED_STATE::STATE_WIFI_AP);
+        // setup static ip if it's set in config and SW_WIFI_RESET is not pressed
+        if (config.global.isStaticIPEnabled)
+        {
+            Serial.printf("Found static IP config, set IP to %s\n", config.global.local.toString().c_str());
+            wifiManager.setSTAStaticIPConfig(config.global.local, config.global.gateway, config.global.subnet,
+                                             config.global.primaryDNS, config.global.secondaryDNS);
+        }
+        if (!wifiManager.autoConnect())
+        {
+            Serial.println("failed to connect, we should reset as see if it connects");
+            setLWiFiLEDState(LED_STATE::STATE_WIFI_AP);
+        }
     }
     Serial.println("WiFi connected!");
     setLWiFiLEDState(LED_STATE::STATE_WIFI_CONNECTED);
@@ -366,18 +370,22 @@ void checkAlarmTask(void *parameter)
  *
  * @param fs FileSystem (LITTLEFS, SPIFFS, SD; ...)
  *************************************/
-void initSDCardStructure(fs::FS &fs) {
-    if(!fs.exists(configPath)) {
+void initSDCardStructure(fs::FS &fs)
+{
+    if (!fs.exists(configPath))
+    {
         Serial.println("Config file does not exist! Save default values to file");
         config.Save(fsConfig, configPath);
     }
-    if(!fs.exists(streamsPath)) {
+    if (!fs.exists(streamsPath))
+    {
         Serial.println("Streams file does not exist! Creating empty file.");
         File streams = fs.open(streamsPath, FILE_WRITE);
         streams.println("[]");
         streams.close();
     }
-    if(!fs.exists(songsDir)) {
+    if (!fs.exists(songsDir))
+    {
         Serial.println("Songs directory does not exist! Creating empty directory.");
         fs.mkdir(songsDir);
     }
@@ -414,7 +422,7 @@ void nextAlarm()
         {
             if (config.alarms[i] > timeinfo)
             {
-                config.alarmSize = i;
+                config.alarmNext = i;
                 selected = true;
                 break;
             }
@@ -424,7 +432,7 @@ void nextAlarm()
     // if no alarm time is bigger, alarm is the first one in the new week
     if (!selected)
     {
-        config.alarmSize = 0;
+        config.alarmNext = 0;
     }
 
     Serial.println("Current time is:");
@@ -892,7 +900,8 @@ void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_
         else
         {
             fsUploadFile = fsSongs.open(path, FILE_WRITE, true);
-            if(!fsUploadFile) {
+            if (!fsUploadFile)
+            {
                 Serial.println("Cannot open file");
                 request->send(500, "text/plain", "Cannot open file " + path);
             }
@@ -909,7 +918,7 @@ void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_
         DynamicJsonDocument buffer(JSON_BUFFER);
         buffer["name"] = filename;
         buffer["url"] = filename;
-        buffer["size"] = (int)fsUploadFile.size();
+        buffer["size"] = fsUploadFile.position();
         fsUploadFile.close();
         // send JSON response
         AsyncResponseStream *response = request->beginResponseStream("application/json");
@@ -973,7 +982,7 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
                     File file = fsSongs.open(url, FILE_READ);
                     if (!file)
                     {
-                        String errorMsg = "{\"error\" : \"cannot open file " + url +"\"}";
+                        String errorMsg = "{\"error\" : \"cannot open file " + url + "\"}";
                         request->send(500, "application/json", errorMsg);
                         file.close();
                         return;
