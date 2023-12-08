@@ -1,32 +1,56 @@
-#include "AlarmSettings.h"
+#include "Alarm.h"
 
 namespace AlarmClock
 {
-    AlarmSettings::AlarmSettings()
+    Alarm::Alarm()
     {
         name = "null";
     }
-    AlarmSettings::AlarmSettings(String name, int dow, int hour, int minute, MusicStream stream) : name(name), dow(dow), hour(hour), minute(minute), stream(stream)
+    Alarm::Alarm(String name, int dow, int hour, int minute, MusicStream stream) : name(name), dow(dow), hour(hour), minute(minute), stream(stream)
     {
     }
 
-    AlarmSettings::~AlarmSettings()
+    Alarm::~Alarm()
     {
     }
 
-    String AlarmSettings::toString()
+    String Alarm::toString()
     {
         String s;
         s += name + ": " + dowName(dow) + " " + hour + ":" + minute + " (" + stream.getURL() + ")";
         return s;
     }
 
-    int AlarmSettings::toSec() const
+    JsonObject Alarm::toJSON() {
+        JsonObject alarm;
+        // read music type first
+        alarm["name"] = name;
+        alarm["hour"] = hour;
+        alarm["minute"] = minute;
+        alarm["dow"] = dow;
+        alarm["type"] = stream.typeToString(stream.getType());
+
+        switch(stream.getType()){
+            case MusicType::FM:
+            alarm["file"] = stream.getFMFrequency();
+            break;
+            case MusicType::FILESYSTEM:
+            case MusicType::STREAM:
+            alarm["file"] = stream.getURL();
+            break;
+            default:
+            Serial.printf("Wrong MusicType %s for alarm %s\n", stream.typeToString(stream.getType()).c_str(), name.c_str());
+        }
+
+        return alarm;
+    }
+
+    int Alarm::toSec() const
     {
         return (dow * 86400) + (hour * 3600) + minute * 60;
     }
 
-    int AlarmSettings::differenceSec(const struct tm timeinfo)
+    int Alarm::differenceSec(const struct tm timeinfo)
     {
         int diff = abs(toSec() - tmToSec(timeinfo));
         if (diff > TIME_MAX_SEC / 2)
@@ -36,12 +60,12 @@ namespace AlarmClock
         return diff;
     }
 
-    MusicStream &AlarmSettings::getStream()
+    MusicStream &Alarm::getStream()
     {
         return stream;
     }
 
-    bool AlarmSettings::operator<(const AlarmSettings &b)
+    bool Alarm::operator<(const Alarm &b)
     {
         return toSec() < b.toSec();
         // check if dow is smaller
@@ -58,12 +82,12 @@ namespace AlarmClock
         // return minute < b.minute;
     }
 
-    bool AlarmSettings::operator>(const AlarmSettings &b)
+    bool Alarm::operator>(const Alarm &b)
     {
         return this->toSec() > b.toSec();
     }
 
-    bool AlarmSettings::operator<(const struct tm timeinfo)
+    bool Alarm::operator<(const struct tm timeinfo)
     {
         return this->toSec() < tmToSec(timeinfo);
         // check if dow is smaller
@@ -80,12 +104,12 @@ namespace AlarmClock
         // return minute < timeinfo.tm_min;
     }
 
-    bool AlarmSettings::operator>(const struct tm timeinfo)
+    bool Alarm::operator>(const struct tm timeinfo)
     {
         return this->toSec() > tmToSec(timeinfo);
     }
 
-    int AlarmSettings::tmToSec(const struct tm t)
+    int Alarm::tmToSec(const struct tm t)
     {
         return (t.tm_wday * 86400) + (t.tm_hour * 3600) + (t.tm_min * 60) + t.tm_sec;
     }

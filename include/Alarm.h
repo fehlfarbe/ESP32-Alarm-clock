@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <time.h>
 #include <TimeLib.h>
+#include <ArduinoJson.h>
 #include "utils.h"
 #include "MusicStream.h"
 
@@ -10,21 +11,22 @@
 
 namespace AlarmClock
 {
-    class AlarmSettings
+    class Alarm
     {
     public:
-        AlarmSettings();
-        AlarmSettings(String name, int dow, int hour, int minute, MusicStream stream);
-        ~AlarmSettings();
+        Alarm();
+        Alarm(String name, int dow, int hour, int minute, MusicStream stream);
+        ~Alarm();
 
         String toString();
+        JsonObject toJSON();
         int toSec() const;
         int differenceSec(const struct tm timeinfo);
 
         MusicStream &getStream();
 
-        bool operator<(const AlarmSettings &b);
-        bool operator>(const AlarmSettings &b);
+        bool operator<(const Alarm &b);
+        bool operator>(const Alarm &b);
         bool operator<(const struct tm timeinfo);
         bool operator>(const struct tm timeinfo);
 

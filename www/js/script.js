@@ -192,6 +192,14 @@ function Song(name, url, size, type) {
         }
         return self.name();
         }, this);
+
+    self.size_mib = ko.computed(function () {
+        if(self.size()){
+            return (self.size() / (1024*1024)).toFixed(2) + " MiB";
+        }
+
+        return "";
+    }, this);
 }
 
 function Network(hostname, static_ip_enabled, static_ip, subnet, gateway, primary_dns, secondary_dns) {

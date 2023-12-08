@@ -13,7 +13,7 @@ AudioProvider::AudioProvider()
     decoder.setDecoder(mp3decoder);
 
     // increase URKL Stream buffer size
-    urlStream.setReadBufferSize(4096);
+    urlStream.setReadBufferSize(4096*2);
 
     // setup volumeStream
     VolumeStreamConfig cfg;
