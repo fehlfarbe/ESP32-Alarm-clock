@@ -4,5 +4,9 @@ data/www
 hardware/pcb/mp3alarm/qr-code.svg
 hardware/pcb/mp3alarm/oshw-logo.svg
 hardware/pcb/mp3alarm/mp3alarm-backups
+hardware/pcb/mp3alarm/gerbers
+hardware/pcb/mp3alarm/~mp3alarm.kicad_sch.lck
 sd/*
 bkp
+doc/*.pdf
+www/api
