@@ -15,7 +15,7 @@ var english = {
     name: "Name",
     weekday: "Weekday",
     time: "Time",
-    song: "Song/Stream/FM",
+    songs: "Audio sources",
     delete: "Delete",
     save_config: "Save Config",
     url: "URL",
@@ -54,7 +54,7 @@ var german = {
     name: "Name",
     weekday: "Wochentag",
     time: "Zeit",
-    song: "Lied/Stream/FM",
+    songs: "Audioquellen",
     delete: "Löschen",
     save_config: "Einstellungen speichern",
     url: "URL",
@@ -286,6 +286,7 @@ function SettingsViewModel() {
     ];
 
     // load files list from SD
+    self.songsLoaded = ko.observable(false);
     self.songs = ko.observableArray([]);
     $.getJSON("/api/songs", function (allData) {
         console.log("Songs", allData);
@@ -293,10 +294,11 @@ function SettingsViewModel() {
             return new Song(a.name, a.url, a.size, a.type);
         });
         self.songs(mappedSongs);
+        self.songsLoaded(true);
     });
 
     // get current config
-    self.general = ko.observable(new General(0, 0, 0));
+    self.general = ko.observable(null);
     self.network = ko.observable(new Network(false));
     self.alarms = ko.observableArray([]);
 

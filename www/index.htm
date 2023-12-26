@@ -57,18 +57,17 @@
     </nav>
 
     <main role="main" class="container">
-
-        <!-- <div class="starter-template">
-            <h1>MP3 Alarm</h1>
-            <p class="lead">This is the MP3 Alarm configuration site.</p>
-        </div> -->
-
         <div class="col-md-12">
             <!-- General settings -->
             <div class="row">
                 <h4 class="mb-3" data-bind="text: l().settings">Settings</h4>
             </div>
-            <form class="needs-validation" novalidate>
+            <div data-bind="ifnot: general">
+                <div class="spinner-border" role="status">
+                    <span class="sr-only">Loading...</span>
+                  </div>
+            </div>
+            <form class="needs-validation" novalidate data-bind="if: general">
                 <div class="row">
                     <div class="col-md-2">
                         <label for="gmt_offset" data-bind="text: l().timezone">Timezone GMT+</label>
@@ -252,9 +251,14 @@
             <!-- Files -->
 
             <div class="row">
-                <h4 class="mb-3" data-bind="text: l().songs">Songs / Streams</h4>
+                <h4 class="mb-3" data-bind="text: l().songs">Audio sources</h4>
             </div>
-            <table class="table">
+            <div data-bind="ifnot: songsLoaded">
+                <div class="spinner-border" role="status">
+                    <span class="sr-only">Loading...</span>
+                  </div>
+            </div>
+            <table class="table" data-bind="if: songsLoaded">
                 <thead>
                     <tr>
                         <th scope="col" data-bind="text: $root.l().name">Name</th>
