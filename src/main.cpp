@@ -20,6 +20,9 @@
 #include <FastLED.h>
 #include <TM1637Display.h>
 
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#include <esp_log.h>
+
 #include "Alarm.h"
 #include "MusicStream.h"
 #include "AudioProvider.h"
@@ -59,11 +62,33 @@
 // Global variables
 AudioProvider audio;
 unsigned long startTime = millis();
+const char *TAG = "ESP32Alarm";
 
 // LED
+enum WIFI_LED_STATE
+{
+    STATE_INIT = HUE_PINK,
+    STATE_WIFI_CONNECTING = HUE_YELLOW,
+    STATE_WIFI_AP = HUE_BLUE,
+    STATE_WIFI_CONNECTED = HUE_GREEN,
+    STATE_WIFI_DISCONNECTED = HUE_RED
+};
+
+enum SYSTEM_LED_STATE
+{
+    STATE_NONE,
+    STATE_FS_ERR,
+    STATE_SD_ERR,
+    STATE_SD_NO_SD
+};
+
+#define LED_MAX_BRIGHTNESS 70
 #define LED_STATUS_IDX 0
 #define LED_WIFI_IDX 1
 CRGB led_status[2];
+
+SYSTEM_LED_STATE ledSystem = SYSTEM_LED_STATE::STATE_NONE;
+WIFI_LED_STATE ledWiFi = WIFI_LED_STATE::STATE_INIT;
 
 // config
 AlarmClock::Config config;
@@ -89,17 +114,11 @@ TM1637Display display(CLK, DIO);
 
 // parallel task
 TaskHandle_t pTask;
-
-enum LED_STATE
-{
-    STATE_INIT = HUE_PINK,
-    STATE_WIFI_CONNECTING = HUE_YELLOW,
-    STATE_WIFI_AP = HUE_BLUE,
-    STATE_WIFI_CONNECTED = HUE_GREEN
-};
+TaskHandle_t pLedTask;
 
 // function declarations
 void checkAlarmTask(void *parameter);
+void ledTask(void *parameter);
 void initSDCardStructure(fs::FS &fs);
 void updateAlarms();
 void nextAlarm();
@@ -110,8 +129,10 @@ void printTime(struct tm);
 bool compareAlarm(AlarmClock::Alarm first, AlarmClock::Alarm second);
 bool checkPlayAlarm();
 void showDisplay(DisplayState state);
-void setLWiFiLEDState(LED_STATE state);
+void setWiFiLEDState(WIFI_LED_STATE state);
+void setSystemLEDState(SYSTEM_LED_STATE state);
 void configModeCallback(AsyncWiFiManager *myWiFiManager);
+void WiFiEvent(WiFiEvent_t event);
 
 void handleAPIConfig(AsyncWebServerRequest *request);
 void handleAPISongs(AsyncWebServerRequest *request);
@@ -134,14 +155,21 @@ void setup()
 
     // setup LEDs
     FastLED.addLeds<NEOPIXEL, LED_STATUS>(led_status, 2);
-    setLWiFiLEDState(LED_STATE::STATE_INIT);
-    led_status[LED_STATUS_IDX] = CHSV(HUE_YELLOW, 255, 70);
-    FastLED.show();
+    // setup parallel task
+    xTaskCreatePinnedToCore(
+        ledTask,                       /* Function to implement the task */
+        "ledTask",                     /* Name of the task */
+        getArduinoLoopTaskStackSize(), /* Stack size in words */
+        NULL,                          /* Task input parameter */
+        1,                             /* Priority of the task */
+        &pLedTask,                      /* Task handle. */
+        0);                            /* Core where the task should run */
 
     // setup serial
     Serial.begin(115200);
-    while (!Serial)
-        ;
+    // delay(5000);
+    // while (!Serial)
+    //     ;
 
     // init audio
     Serial.println("Setup I2S output");
@@ -156,19 +184,8 @@ void setup()
     if (!fsWWW.begin(false, "/littlefs", 10))
     {
         Serial.println("An Error has occurred while mounting LITTLEFS");
-        while (true)
-        {
-            if (!led_status[LED_STATUS_IDX].getLuma())
-            {
-                led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, 70);
-            }
-            else
-            {
-                led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, 70);
-            }
-            FastLED.show();
-            delay(500);
-        }
+        ledSystem = SYSTEM_LED_STATE::STATE_FS_ERR;
+        while (true);
     }
     Serial.println("Files on flash:");
     listDir(fsWWW, "/", 5);
@@ -178,20 +195,9 @@ void setup()
     while (!SD_MMC.begin("/sdcad", false, false, 20000))
     {
         showDisplay(DisplayState::SD_ERR);
+        ledSystem = SYSTEM_LED_STATE::STATE_SD_ERR;
         Serial.println("Card Mount Failed");
-        while (true)
-        {
-            if (!led_status[LED_STATUS_IDX].getLuma())
-            {
-                led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, 70);
-            }
-            else
-            {
-                led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, 0);
-            }
-            FastLED.show();
-            delay(1000);
-        }
+        while (true);
     }
 
     uint8_t cardType = SD_MMC.cardType();
@@ -199,8 +205,7 @@ void setup()
     {
         Serial.println("No SD card attached");
         showDisplay(DisplayState::SD_ERR);
-        led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, 70);
-        FastLED.show();
+        ledSystem = SYSTEM_LED_STATE::STATE_SD_NO_SD;
         while (true)
             ;
     }
@@ -216,7 +221,7 @@ void setup()
 
     // connect WiFi
     showDisplay(DisplayState::WIFI_CONNECT);
-    // WiFi.onEvent( WiFiEvent );
+    WiFi.onEvent(WiFiEvent);
     // setup WiFI manager
     // wifiManager.setConnectTimeout(10);
     wifiManager.setAPCallback(configModeCallback);
@@ -224,7 +229,6 @@ void setup()
     if (digitalRead(SW1) == LOW)
     {
         Serial.println("Starting AP...");
-        setLWiFiLEDState(LED_STATE::STATE_WIFI_AP);
         config.global.isStaticIPEnabled = false; // disable static ip settings
         wifiManager.resetSettings();
         wifiManager.startConfigPortal(config.global.hostname.c_str());
@@ -241,11 +245,9 @@ void setup()
         if (!wifiManager.autoConnect())
         {
             Serial.println("failed to connect, we should reset as see if it connects");
-            setLWiFiLEDState(LED_STATE::STATE_WIFI_AP);
         }
     }
     Serial.println("WiFi connected!");
-    setLWiFiLEDState(LED_STATE::STATE_WIFI_CONNECTED);
 
     // setup mDNS
     if (!MDNS.begin(config.global.hostname.c_str()))
@@ -278,7 +280,7 @@ void setup()
 
     // HTTP Server
     server.begin();
-    server.serveStatic("/", fsWWW, "/www/").setCacheControl("max-age=31536000");
+    server.serveStatic("/", fsWWW, "/www/");
     server.on("/api/config", handleAPIConfig);
     // server.on("/api/config/update", HTTP_POST, handleAPIConfigUpdate);
     server.on("/api/state", handleAPIState);
@@ -304,10 +306,6 @@ void setup()
         1,                             /* Priority of the task */
         &pTask,                        /* Task handle. */
         0);                            /* Core where the task should run */
-
-    // set status LED to ok
-    led_status[LED_STATUS_IDX] = CHSV(HUE_GREEN, 255, 70);
-    FastLED.show();
 }
 
 void loop()
@@ -332,11 +330,6 @@ void checkAlarmTask(void *parameter)
         checkPlayAlarm();
         // update display time
         showDisplay(DisplayState::TIME);
-        // show wifi strength
-        auto rssi = map(abs(WiFi.RSSI()), 50, 90, 96, 0);
-        // Serial.printf("RSSI %d\n", rssi);
-        led_status[LED_WIFI_IDX] = CHSV(rssi, 255, 70);
-        FastLED.show();
 
         // check buttons
         if (digitalRead(SW1) == LOW)
@@ -362,6 +355,17 @@ void checkAlarmTask(void *parameter)
         delay(100);
     }
     Serial.println("Exit task...");
+}
+
+void ledTask(void *parameter)
+{
+    while (true)
+    {
+        setSystemLEDState(ledSystem);
+        setWiFiLEDState(ledWiFi);
+        FastLED.show();
+        delay(100);
+    }
 }
 
 /**************************************
@@ -561,10 +565,45 @@ void showDisplay(DisplayState state)
  * Set LED state
  *
  *************************************/
-void setLWiFiLEDState(LED_STATE state)
+void setWiFiLEDState(WIFI_LED_STATE state)
 {
-    led_status[LED_WIFI_IDX] = CHSV(state, 255, 70);
-    FastLED.show();
+    uint8_t v = 70;
+    if (state == WIFI_LED_STATE::STATE_INIT)
+    {
+        v = 0;
+    }
+    led_status[LED_WIFI_IDX] = CHSV(state, 255, v);
+
+    if (WiFi.isConnected())
+    {
+        // show wifi strength
+        auto rssi = map(abs(WiFi.RSSI()), 50, 90, 96, 0);
+        // Serial.printf("RSSI %d\n", rssi);
+        led_status[LED_WIFI_IDX] = CHSV(rssi, 255, 70);
+    }
+}
+
+void setSystemLEDState(SYSTEM_LED_STATE state)
+{
+    auto now = millis();
+    switch (state)
+    {
+    case SYSTEM_LED_STATE::STATE_SD_ERR:
+        // flash with 1 Hz
+        led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, now % 1000 < 500 ? LED_MAX_BRIGHTNESS: 0);
+        break;
+    case SYSTEM_LED_STATE::STATE_SD_NO_SD:
+        // flash with 0.5 Hz
+        led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, now % 2000 < 1000 ? LED_MAX_BRIGHTNESS: 0);
+        break;
+        break;
+    case SYSTEM_LED_STATE::STATE_FS_ERR:
+        led_status[LED_STATUS_IDX] = CHSV(HUE_ORANGE, 255, LED_MAX_BRIGHTNESS);
+        break;
+    default:
+        led_status[LED_STATUS_IDX] = CHSV(0, 0, 0);
+        break;
+    }
 }
 /**************************************
  *
@@ -625,7 +664,7 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 
 void configModeCallback(AsyncWiFiManager *myWiFiManager)
 {
-    setLWiFiLEDState(LED_STATE::STATE_WIFI_AP);
+    // setLWiFiLEDState(LED_STATE::STATE_WIFI_AP);
     Serial.println("Entered config mode");
     Serial.println(WiFi.softAPIP());
     Serial.println(myWiFiManager->getConfigPortalSSID());
@@ -635,45 +674,45 @@ void configModeCallback(AsyncWiFiManager *myWiFiManager)
  * @brief handles WiFi events and auto reconnects
  *
  */
-// void WiFiEvent( WiFiEvent_t event ) {
-//   switch ( event ) {
-//     case SYSTEM_EVENT_AP_START:
-//       ESP_LOGI( TAG, "AP Started");
-//       setLEDSTate(LED_STATE::STATE_WIFI_AP);
-//       //WiFi.softAPsetHostname(AP_SSID);
-//       break;
-//     case SYSTEM_EVENT_AP_STOP:
-//       ESP_LOGI( TAG, "AP Stopped");
-//       break;
-//     case SYSTEM_EVENT_STA_START:
-//       ESP_LOGI( TAG, "STA Started");
-//       //WiFi.setHostname( DEFAULT_HOSTNAME_PREFIX.c_str( );
-//       break;
-//     case SYSTEM_EVENT_STA_CONNECTED:
-//       ESP_LOGI( TAG, "STA Connected");
-//       setLEDSTate(LED_STATE::STATE_WIFI_CONNECTED);
-//       //WiFi.enableIpV6();
-//       break;
-//     case SYSTEM_EVENT_AP_STA_GOT_IP6:
-//       ESP_LOGI( TAG, "STA IPv6: ");
-//       //ESP_LOGI( TAG, "%s", WiFi.localIPv6().toString());
-//       break;
-//     case SYSTEM_EVENT_STA_GOT_IP:
-//       //ESP_LOGI( TAG, "STA IPv4: ");
-//       //ESP_LOGI( TAG, "%s", WiFi.localIP());
-//       break;
-//     case SYSTEM_EVENT_STA_DISCONNECTED:
-//       ESP_LOGI( TAG, "STA Disconnected -> reconnect");
-//       setLEDSTate(LED_STATE::STATE_INIT);
-//       WiFi.begin();
-//       break;
-//     case SYSTEM_EVENT_STA_STOP:
-//       ESP_LOGI( TAG, "STA Stopped");
-//       break;
-//     default:
-//       break;
-//   }
-// }
+void WiFiEvent(WiFiEvent_t event)
+{
+    switch (event)
+    {
+    case SYSTEM_EVENT_AP_START:
+        ESP_LOGI(TAG, "AP Started");
+        ledWiFi = WIFI_LED_STATE::STATE_WIFI_AP;
+        break;
+    case SYSTEM_EVENT_AP_STOP:
+        ESP_LOGI(TAG, "AP Stopped");
+        ledWiFi = WIFI_LED_STATE::STATE_INIT;
+        break;
+    case SYSTEM_EVENT_STA_START:
+        ESP_LOGI(TAG, "STA Started");
+        ledWiFi = WIFI_LED_STATE::STATE_WIFI_CONNECTING;
+        break;
+    case SYSTEM_EVENT_STA_CONNECTED:
+        ESP_LOGI(TAG, "STA Connected");
+        ledWiFi = WIFI_LED_STATE::STATE_WIFI_CONNECTED;
+        break;
+    case SYSTEM_EVENT_AP_STA_GOT_IP6:
+        ESP_LOGI(TAG, "STA IPv6: ");
+        // ESP_LOGI( TAG, "%s", WiFi.localIPv6().toString());
+        break;
+    case SYSTEM_EVENT_STA_GOT_IP:
+        // ESP_LOGI( TAG, "STA IPv4: ");
+        ESP_LOGI(TAG, "%s", WiFi.localIP());
+        break;
+    case SYSTEM_EVENT_STA_DISCONNECTED:
+        ESP_LOGI(TAG, "STA Disconnected -> reconnect");
+        ledWiFi = WIFI_LED_STATE::STATE_WIFI_DISCONNECTED;
+        break;
+    case SYSTEM_EVENT_STA_STOP:
+        ESP_LOGI(TAG, "STA Stopped");
+        break;
+    default:
+        break;
+    }
+}
 
 /**
  * @brief returns the config (alarms, general config, ...) as JSON

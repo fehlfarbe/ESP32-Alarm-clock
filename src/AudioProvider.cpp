@@ -106,6 +106,9 @@ uint32_t AudioProvider::getTotalTime()
 
 void AudioProvider::loop()
 {
+    // DEBUG
+    // radio.debugRadioInfo();
+
     if (nextMedia.type != NONE)
     {
         // mute and cleanup first
