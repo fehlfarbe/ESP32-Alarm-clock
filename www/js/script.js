@@ -76,21 +76,21 @@ var german = {
     fm_frequency: "Frequenz"
 }
 
-function getLanguage(){
+function getLanguage() {
     var lang = navigator.language || navigator.userLanguage;
     console.log(lang);
-    if(lang === "de-DE"){
+    if (lang === "de-DE") {
         return german;
     }
     return english;
 }
 
-function modalAlert(msg){
+function modalAlert(msg) {
     $("#modalAlertBody").html(msg);
     $('#modalAlert').modal();
 }
 
-function modalSuccess(msg){
+function modalSuccess(msg) {
     $("#modalSuccessBody").html(msg);
     $('#modalSuccess').modal();
 }
@@ -126,7 +126,7 @@ function Alarm(name, dow, hour, minute, file) {
         obj.name = self.name()
         obj.hour = self.hour();
         obj.minute = self.minute();
-        obj.file = self.file().url();
+        obj.file = encodeURIComponent(self.file().url());
         obj.type = self.file().type();
         obj.dow = Array();
         self.dow().forEach(d => {
@@ -183,7 +183,7 @@ function Song(name, url, size, type) {
         return self.url();
     }, this);
 
-    self.name_extended = ko.computed(function(){
+    self.name_extended = ko.computed(function () {
         if (self.type() == "fm") {
             return self.name() + " [FM: " + self.url() + " MHz]";
         }
@@ -191,11 +191,11 @@ function Song(name, url, size, type) {
             return self.name() + " [stream]";
         }
         return self.name();
-        }, this);
+    }, this);
 
     self.size_mib = ko.computed(function () {
-        if(self.size()){
-            return (self.size() / (1024*1024)).toFixed(2) + " MiB";
+        if (self.size()) {
+            return (self.size() / (1024 * 1024)).toFixed(2) + " MiB";
         }
 
         return "";
@@ -285,6 +285,10 @@ function SettingsViewModel() {
         { name: self.l().saturday, value: 6 }
     ];
 
+    self.general = ko.observable(null);
+    self.network = ko.observable(new Network(false));
+    self.alarms = ko.observableArray([]);
+
     // load files list from SD
     self.songsLoaded = ko.observable(false);
     self.songs = ko.observableArray([]);
@@ -295,56 +299,53 @@ function SettingsViewModel() {
         });
         self.songs(mappedSongs);
         self.songsLoaded(true);
-    });
 
-    // get current config
-    self.general = ko.observable(null);
-    self.network = ko.observable(new Network(false));
-    self.alarms = ko.observableArray([]);
-
-    $.getJSON("/api/config", function (allData) {
-        // general
-        self.general(new General(allData.general.gmt_offset,
-            allData.general.dst_offset,
-            allData.general.audio_volume));
-        // network
-        if(allData.network){
-            self.network(new Network(
-                allData.network.hostname,
-                allData.network.static_ip_enabled,
-                allData.network.static_ip,
-                allData.network.subnet,
-                allData.network.gateway,
-                allData.network.primary_dns,
-                allData.network.secondary_dns,
-            ));
-        } else {
-            self.network(new Network());
-        }
-
-        // alarms
-        var mappedAlarms = $.map(allData.alarms, function (a) {
-            var dowArray = Array();
-            a.dow.forEach(d => {
-                dowArray.push(self.weekdays[d]);
-            });
-
-            // compare songs by url or use first of array
-            var song = self.songs().find(f => f.url() === a.file);
-            if (song == undefined) {
-                song = self.songs()[0];
+        // when songs are loaded, load config
+        $.getJSON("/api/config", function (allData) {
+            // general
+            self.general(new General(allData.general.gmt_offset,
+                allData.general.dst_offset,
+                allData.general.audio_volume));
+            // network
+            if (allData.network) {
+                self.network(new Network(
+                    allData.network.hostname,
+                    allData.network.static_ip_enabled,
+                    allData.network.static_ip,
+                    allData.network.subnet,
+                    allData.network.gateway,
+                    allData.network.primary_dns,
+                    allData.network.secondary_dns,
+                ));
+            } else {
+                self.network(new Network());
             }
 
-            return new Alarm(a.name,
-                dowArray,
-                a.hour,
-                a.minute,
-                song);
-        });
-        self.alarms(mappedAlarms);
+            // alarms
+            var mappedAlarms = $.map(allData.alarms, function (a) {
+                var dowArray = Array();
+                a.dow.forEach(d => {
+                    dowArray.push(self.weekdays[d]);
+                });
 
-        $('.selectpicker').selectpicker();
+                // compare songs by url or use first of array
+                var song = self.songs().find(f => f.url() === a.file);
+                if (song == undefined) {
+                    song = self.songs()[0];
+                }
+
+                return new Alarm(a.name,
+                    dowArray,
+                    a.hour,
+                    a.minute,
+                    song);
+            });
+            self.alarms(mappedAlarms);
+
+            $('.selectpicker').selectpicker();
+        });
     });
+
 
     // playback
     self.playback = ko.observable(new Playback(null, false, 0, 0));
@@ -398,6 +399,11 @@ function SettingsViewModel() {
             "song": ko.toJS(file)
         }
 
+        // urlencode elemets
+        if (req?.song?.url) {
+            req.song.url = encodeURIComponent(req.song.url);
+            req.song.url_typed = encodeURIComponent(req.song.url);
+        }
 
         console.log(req);
 
@@ -430,7 +436,7 @@ function SettingsViewModel() {
 
         var req = {
             "action": "play",
-            "url": song,
+            "url": encodeURIComponent(song),
             "volume": volume
         };
 
@@ -536,7 +542,7 @@ function SettingsViewModel() {
                 "action": "addStream",
                 "stream": {
                     "name": self.streamName(),
-                    "url": self.streamUrl(),
+                    "url": encodeURIComponent(self.streamUrl()),
                     "type": "stream"
                 }
             };

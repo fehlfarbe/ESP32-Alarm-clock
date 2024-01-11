@@ -68,8 +68,9 @@ const char *TAG = "ESP32Alarm";
 enum WIFI_LED_STATE
 {
     STATE_INIT = HUE_PINK,
-    STATE_WIFI_CONNECTING = HUE_YELLOW,
+    STATE_WIFI_CONNECTING = HUE_ORANGE,
     STATE_WIFI_AP = HUE_BLUE,
+    STATE_WIFI_AP_CONNECTED = HUE_AQUA,
     STATE_WIFI_CONNECTED = HUE_GREEN,
     STATE_WIFI_DISCONNECTED = HUE_RED
 };
@@ -162,7 +163,7 @@ void setup()
         getArduinoLoopTaskStackSize(), /* Stack size in words */
         NULL,                          /* Task input parameter */
         1,                             /* Priority of the task */
-        &pLedTask,                      /* Task handle. */
+        &pLedTask,                     /* Task handle. */
         0);                            /* Core where the task should run */
 
     // setup serial
@@ -173,6 +174,7 @@ void setup()
 
     // init audio
     Serial.println("Setup I2S output");
+    // AudioLogger::instance().begin(Serial,AudioLogger::Info);
     audio.init(I2S_BCLK, I2S_DOUT, I2S_WS, I2S_DIN, SCL, SDA);
     audio.setVolume(config.global.audio_volume); // 0...1
 
@@ -185,7 +187,8 @@ void setup()
     {
         Serial.println("An Error has occurred while mounting LITTLEFS");
         ledSystem = SYSTEM_LED_STATE::STATE_FS_ERR;
-        while (true);
+        while (true)
+            ;
     }
     Serial.println("Files on flash:");
     listDir(fsWWW, "/", 5);
@@ -197,7 +200,8 @@ void setup()
         showDisplay(DisplayState::SD_ERR);
         ledSystem = SYSTEM_LED_STATE::STATE_SD_ERR;
         Serial.println("Card Mount Failed");
-        while (true);
+        while (true)
+            ;
     }
 
     uint8_t cardType = SD_MMC.cardType();
@@ -221,10 +225,12 @@ void setup()
 
     // connect WiFi
     showDisplay(DisplayState::WIFI_CONNECT);
+    WiFi.setAutoReconnect(true); 
     WiFi.onEvent(WiFiEvent);
     // setup WiFI manager
     // wifiManager.setConnectTimeout(10);
-    wifiManager.setAPCallback(configModeCallback);
+    wifiManager.setConfigPortalTimeout(0);
+    // wifiManager.setAPCallback(configModeCallback);
     // connect to WiFi
     if (digitalRead(SW1) == LOW)
     {
@@ -348,7 +354,8 @@ void checkAlarmTask(void *parameter)
             {
                 printTime(timeinfo);
             }
-            Serial.printf(", uptime %ds RSSI %d, heap %d, stack %d\n", (millis() - startTime) / 1000, WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL));
+            Serial.printf(", uptime %ds WiFi [%d]: %s, RSSI %d, heap %d, stack %d\n",
+                          (millis() - startTime) / 1000, WiFi.isConnected(), WiFi.SSID().c_str(), WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL));
             lastRSSI = millis();
         }
 
@@ -567,11 +574,20 @@ void showDisplay(DisplayState state)
  *************************************/
 void setWiFiLEDState(WIFI_LED_STATE state)
 {
-    uint8_t v = 70;
-    if (state == WIFI_LED_STATE::STATE_INIT)
+    auto now = millis();
+    uint8_t v = LED_MAX_BRIGHTNESS;
+    switch (state)
     {
+    case WIFI_LED_STATE::STATE_INIT:
         v = 0;
+        break;
+    case WIFI_LED_STATE::STATE_WIFI_CONNECTING:
+        v *= (now % 2000) / 2000.;
+        break;
+    default:
+        break;
     }
+
     led_status[LED_WIFI_IDX] = CHSV(state, 255, v);
 
     if (WiFi.isConnected())
@@ -590,11 +606,11 @@ void setSystemLEDState(SYSTEM_LED_STATE state)
     {
     case SYSTEM_LED_STATE::STATE_SD_ERR:
         // flash with 1 Hz
-        led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, now % 1000 < 500 ? LED_MAX_BRIGHTNESS: 0);
+        led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, now % 1000 < 500 ? LED_MAX_BRIGHTNESS : 0);
         break;
     case SYSTEM_LED_STATE::STATE_SD_NO_SD:
         // flash with 0.5 Hz
-        led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, now % 2000 < 1000 ? LED_MAX_BRIGHTNESS: 0);
+        led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, now % 2000 < 1000 ? LED_MAX_BRIGHTNESS : 0);
         break;
         break;
     case SYSTEM_LED_STATE::STATE_FS_ERR:
@@ -668,6 +684,7 @@ void configModeCallback(AsyncWiFiManager *myWiFiManager)
     Serial.println("Entered config mode");
     Serial.println(WiFi.softAPIP());
     Serial.println(myWiFiManager->getConfigPortalSSID());
+    ledWiFi = WIFI_LED_STATE::STATE_WIFI_AP;
 }
 
 /**
@@ -678,40 +695,54 @@ void WiFiEvent(WiFiEvent_t event)
 {
     switch (event)
     {
-    case SYSTEM_EVENT_AP_START:
+    case ARDUINO_EVENT_WIFI_AP_START:
         ESP_LOGI(TAG, "AP Started");
         ledWiFi = WIFI_LED_STATE::STATE_WIFI_AP;
         break;
-    case SYSTEM_EVENT_AP_STOP:
+    case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
+        ESP_LOGI(TAG, "AP user connected");
+        ledWiFi = WIFI_LED_STATE::STATE_WIFI_AP_CONNECTED;
+        break;
+    case ARDUINO_EVENT_WIFI_AP_STOP:
         ESP_LOGI(TAG, "AP Stopped");
         ledWiFi = WIFI_LED_STATE::STATE_INIT;
         break;
-    case SYSTEM_EVENT_STA_START:
+    case ARDUINO_EVENT_WIFI_STA_START:
         ESP_LOGI(TAG, "STA Started");
-        ledWiFi = WIFI_LED_STATE::STATE_WIFI_CONNECTING;
+        if (WiFi.getMode() == WIFI_MODE_APSTA)
+        {
+            ledWiFi = WIFI_LED_STATE::STATE_WIFI_AP;
+        }
+        else
+        {
+            ledWiFi = WIFI_LED_STATE::STATE_WIFI_CONNECTING;
+        }
         break;
-    case SYSTEM_EVENT_STA_CONNECTED:
+    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
         ESP_LOGI(TAG, "STA Connected");
         ledWiFi = WIFI_LED_STATE::STATE_WIFI_CONNECTED;
         break;
-    case SYSTEM_EVENT_AP_STA_GOT_IP6:
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
         ESP_LOGI(TAG, "STA IPv6: ");
         // ESP_LOGI( TAG, "%s", WiFi.localIPv6().toString());
         break;
-    case SYSTEM_EVENT_STA_GOT_IP:
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
         // ESP_LOGI( TAG, "STA IPv4: ");
         ESP_LOGI(TAG, "%s", WiFi.localIP());
         break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+    case ARDUINO_EVENT_WIFI_STA_LOST_IP:
         ESP_LOGI(TAG, "STA Disconnected -> reconnect");
+        WiFi.reconnect();
         ledWiFi = WIFI_LED_STATE::STATE_WIFI_DISCONNECTED;
         break;
-    case SYSTEM_EVENT_STA_STOP:
+    case ARDUINO_EVENT_WIFI_STA_STOP:
         ESP_LOGI(TAG, "STA Stopped");
         break;
     default:
         break;
     }
+    ESP_LOGI(TAG, "WiFi mode %d", WiFi.getMode());
 }
 
 /**
@@ -783,7 +814,8 @@ void handleAPISongs(AsyncWebServerRequest *request)
             {
                 Serial.println("----- parseObject() failed -----");
                 Serial.println(error.c_str());
-                request->send(500, "application/json", "{\"error\" : \"cannot parse JSON\"");
+                Serial.println(request->getParam(0)->value());
+                request->send(500, "application/json", "{\"error\" : \"cannot parse JSON: " + String(error.c_str()) + "\"}");
                 return;
             }
 
@@ -796,6 +828,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
             if (action == "delete")
             {
                 String url = req["song"]["url"];
+                String name = req["song"]["name"];
                 auto type = AlarmClock::MusicStream::stringToType(req["song"]["type"]);
                 Serial.println("Delete song " + url);
                 // delete http streams from streams.json or delete file from SD card
@@ -812,13 +845,13 @@ void handleAPISongs(AsyncWebServerRequest *request)
                         return;
                     }
                     // find stream/fm on array, delete and write back
-                    auto streams = doc.to<JsonArray>();
-                    for (size_t i = 0; i < streams.size(); i++)
+                    Serial.println("DOC before");
+                    auto streams = doc.as<JsonArray>();
+                    for (JsonArray::iterator it = streams.begin(); it != streams.end(); ++it)
                     {
-                        if (streams[i]["url"] == url)
+                        if ((*it)["url"] == url && (*it)["name"] == name)
                         {
-                            streams.remove(i);
-                            Serial.println("Removed");
+                            streams.remove(it);
                             break;
                         }
                     }

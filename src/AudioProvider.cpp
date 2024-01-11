@@ -2,18 +2,17 @@
 // #include <AudioCodecs/CodecMP3MAD.h>
 #include <AudioCodecs/CodecMP3Helix.h>
 
-
 AudioProvider::AudioProvider()
 {
-    AudioLogger::instance().begin(Serial, AudioLogger::Warning); 
+    AudioLogger::instance().begin(Serial, AudioLogger::Warning);
     // setup decoder
     decoder.setOutput(&volumeStream);
     MP3DecoderHelix *mp3decoder = new MP3DecoderHelix();
     mp3decoder->setMaxFrameSize(4800); // increase mp3 frame size buffer to prevent stuttering
     decoder.setDecoder(mp3decoder);
 
-    // increase URKL Stream buffer size
-    urlStream.setReadBufferSize(4096*2);
+    // increase URL Stream buffer size
+    urlStream.setReadBufferSize(DEFAULT_BUFFER_SIZE * 12);
 
     // setup volumeStream
     VolumeStreamConfig cfg;
@@ -22,7 +21,7 @@ AudioProvider::AudioProvider()
     cfg.sample_rate = sample_rate;
     cfg.volume = 1.0f;
     volumeStream.begin(cfg);
-    volumeStream.setTarget(i2s);
+    volumeStream.setOutput(i2s);
 }
 
 AudioProvider::~AudioProvider()
@@ -68,6 +67,14 @@ void AudioProvider::resume()
 void AudioProvider::stop()
 {
     playing = false;
+
+    // mute and clear pipeline
+    radio.setMute(true);
+    volumeStream.setVolume(0);
+    copier.end();
+    urlStream.end();
+    decoder.end();
+    volumeStream.setVolume(volume);
 }
 
 bool AudioProvider::isPlaying()
@@ -86,6 +93,7 @@ float AudioProvider::getVolume()
 {
     // Serial.printf("Get volume ch0 %.2f\n", volumeStream.volume(0));
     // Serial.printf("Get volume ch1 %.2f\n", volumeStream.volume(1));
+    // Serial.printf("Get volume %.2f\n", volumeStream.volume());
     return volume;
 }
 
@@ -112,10 +120,7 @@ void AudioProvider::loop()
     if (nextMedia.type != NONE)
     {
         // mute and cleanup first
-        radio.setMute(true);
-        copier.end();
-        decoder.end();
-        urlStream.end();
+        stop();
 
         // open next media
         switch (nextMedia.type)
@@ -125,6 +130,7 @@ void AudioProvider::loop()
             decoder.setNotifyAudioChange(i2s);
             decoder.begin();
             // open URL
+            urlStream.setTimeout(10000);
             urlStream.begin(nextMedia.source.c_str(), "audio/mp3");
             copier.begin(decoder, urlStream);
             // set state
