@@ -80,7 +80,8 @@ enum SYSTEM_LED_STATE
     STATE_NONE,
     STATE_FS_ERR,
     STATE_SD_ERR,
-    STATE_SD_NO_SD
+    STATE_SD_NO_SD,
+    STATE_TIME_NOT_SYNCED
 };
 
 #define LED_MAX_BRIGHTNESS 70
@@ -354,8 +355,9 @@ void checkAlarmTask(void *parameter)
             {
                 printTime(timeinfo);
             }
-            Serial.printf(", uptime %ds WiFi [%d]: %s, RSSI %d, heap %d, stack %d\n",
-                          (millis() - startTime) / 1000, WiFi.isConnected(), WiFi.SSID().c_str(), WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL));
+            Serial.printf(", uptime %ds WiFi [%d]: %s, RSSI %d, heap %d, stack %d next alarm: %s\n",
+                          (millis() - startTime) / 1000, WiFi.isConnected(), WiFi.SSID().c_str(), WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL),
+                          config.alarms[config.alarmNext].toString().c_str());
             lastRSSI = millis();
         }
 
@@ -463,8 +465,10 @@ bool checkPlayAlarm()
     if (!getLocalTime(&timeinfo))
     {
         Serial.println("Cannot get local time");
+        ledSystem = SYSTEM_LED_STATE::STATE_TIME_NOT_SYNCED;
         return false;
     }
+    ledSystem = SYSTEM_LED_STATE::STATE_NONE;
 
     // check if timer is reached and play file
     if (config.alarms[config.alarmNext] < timeinfo && config.alarms[config.alarmNext].differenceSec(timeinfo) < 10)
@@ -498,7 +502,8 @@ bool checkPlayAlarm()
         }
 
         // select next alarm
-        config.alarmNext = (config.alarmSize + 1) % config.alarmSize;
+        config.alarmNext = (config.alarmNext + 1) % config.alarmSize;
+        Serial.println("Next Alarm is " + config.alarms[config.alarmNext].toString());
         return true;
     }
 
@@ -615,6 +620,9 @@ void setSystemLEDState(SYSTEM_LED_STATE state)
         break;
     case SYSTEM_LED_STATE::STATE_FS_ERR:
         led_status[LED_STATUS_IDX] = CHSV(HUE_ORANGE, 255, LED_MAX_BRIGHTNESS);
+        break;
+    case SYSTEM_LED_STATE::STATE_TIME_NOT_SYNCED:
+        led_status[LED_STATUS_IDX] = CHSV(HUE_YELLOW, 255, LED_MAX_BRIGHTNESS);
         break;
     default:
         led_status[LED_STATUS_IDX] = CHSV(0, 0, 0);
