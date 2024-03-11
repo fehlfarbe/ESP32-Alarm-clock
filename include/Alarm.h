@@ -1,9 +1,10 @@
-#ifndef ALARMSETTINGS_H
-#define ALARMSETTINGS_H
+#ifndef ALARM_H
+#define ALARM_H
 #include <Arduino.h>
 #include <time.h>
 #include <TimeLib.h>
 #include <ArduinoJson.h>
+#include <Array.h>
 #include "utils.h"
 #include "MusicStream.h"
 
@@ -15,31 +16,22 @@ namespace AlarmClock
     {
     public:
         Alarm();
-        Alarm(String name, int dow, int hour, int minute, MusicStream stream);
+        Alarm(String name, Array<int, MAX_DOW> dow, int hour, int minute, MusicStream stream);
         ~Alarm();
 
         String toString();
-        JsonObject toJSON();
-        int toSec() const;
-        int differenceSec(const struct tm timeinfo);
+        void toJSON(JsonObject &alarm);
 
         MusicStream &getStream();
 
-        bool operator<(const Alarm &b);
-        bool operator>(const Alarm &b);
-        bool operator<(const struct tm timeinfo);
-        bool operator>(const struct tm timeinfo);
-
     public:
+        bool enabled;
         String name;
-        int dow;
+        DaysOfWeek dow;
         int hour;
         int minute;
         MusicStream stream;
-
-    private:
-        int tmToSec(const struct tm t);
     };
 }
 
-#endif // ALARMSETTINGS_H
+#endif // ALARM_H

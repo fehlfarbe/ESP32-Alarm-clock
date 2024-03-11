@@ -11,7 +11,6 @@
 #include <time.h>
 #include <TimeLib.h>
 #include <ArduinoJson.h>
-#include <ArduinoSort.h>
 #include <FS.h>
 #include <LittleFS.h>
 #include <SPI.h>
@@ -30,30 +29,29 @@
 #include "Config.h"
 
 // Digital I/O used
-#define I2S_DOUT 2
-#define I2S_BCLK 1
+#define I2S_DOUT 1
+#define I2S_BCLK 2
 #define I2S_WS 42
-#define I2S_DIN 9
+#define I2S_RADIO_OUT 9
+#define I2S_MUTE 18
+#define I2S_DEEM 3
 
 // SD_MMC
-#define SD_MMC_CLK 21
-#define SD_MMC_CMD 47
-#define SD_MMC_D0 14
-#define SD_MMC_D1 13
-#define SD_MMC_D2 45
-#define SD_MMC_D3 48
+#define SD_MMC_CLK 14
+#define SD_MMC_CMD 21
+#define SD_MMC_D0 13
+#define SD_MMC_D1 12
+#define SD_MMC_D2 48
+#define SD_MMC_D3 47
 
-#define SW0 4
-#define SW1 38
-#define SW2 7
+#define SW0 40
+#define SW1 41
 #define SW_WIFI_RESET SW0
-// #define LED_BUILTIN 2
-#define I2S_MUTE 46
-#define LED_STATUS 3
+#define LED_STATUS 8
 
 // Display and I2C
-#define CLK 5
-#define DIO 6
+#define CLK 39
+#define DIO 38
 #define SCL 10
 #define SDA 11
 
@@ -126,9 +124,8 @@ void updateAlarms();
 void nextAlarm();
 void printAlarms();
 void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
-time_t getNtpTime();
+time_t updateNTPTime();
 void printTime(struct tm);
-bool compareAlarm(AlarmClock::Alarm first, AlarmClock::Alarm second);
 bool checkPlayAlarm();
 void showDisplay(DisplayState state);
 void setWiFiLEDState(WIFI_LED_STATE state);
@@ -145,6 +142,7 @@ void handleOTAUpdateForm(AsyncWebServerRequest *request);
 void handleOTAUpdateResponse(AsyncWebServerRequest *request);
 void handleOTAUpdateUploadFirmware(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
 void handleOTAUpdateUploadFilesystem(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
+void handleReboot(AsyncWebServerRequest *request);
 
 // setup
 void setup()
@@ -152,7 +150,6 @@ void setup()
     // setup pins
     pinMode(SW0, INPUT_PULLUP);
     pinMode(SW1, INPUT_PULLUP);
-    pinMode(SW2, INPUT_PULLUP);
     pinMode(I2S_MUTE, OUTPUT);
 
     // setup LEDs
@@ -176,8 +173,10 @@ void setup()
     // init audio
     Serial.println("Setup I2S output");
     // AudioLogger::instance().begin(Serial,AudioLogger::Info);
-    audio.init(I2S_BCLK, I2S_DOUT, I2S_WS, I2S_DIN, SCL, SDA);
-    audio.setVolume(config.global.audio_volume); // 0...1
+    audio.init(I2S_BCLK, I2S_DOUT, I2S_WS, I2S_RADIO_OUT, SCL, SDA);
+    audio.setVolume(config.GetGlobalConfig().audio_volume); // 0...1
+    digitalWrite(I2S_MUTE, LOW);
+    digitalWrite(I2S_DEEM, LOW);
 
     // setup display
     display.clear();
@@ -222,11 +221,11 @@ void setup()
 
     // load config
     config.LoadFromPath(fsConfig, configPath);
-    audio.setVolume(config.global.audio_volume);
+    audio.setVolume(config.GetGlobalConfig().audio_volume);
 
     // connect WiFi
     showDisplay(DisplayState::WIFI_CONNECT);
-    WiFi.setAutoReconnect(true); 
+    WiFi.setAutoReconnect(true);
     WiFi.onEvent(WiFiEvent);
     // setup WiFI manager
     // wifiManager.setConnectTimeout(10);
@@ -236,18 +235,18 @@ void setup()
     if (digitalRead(SW1) == LOW)
     {
         Serial.println("Starting AP...");
-        config.global.isStaticIPEnabled = false; // disable static ip settings
+        config.GetGlobalConfig().isStaticIPEnabled = false; // disable static ip settings
         wifiManager.resetSettings();
-        wifiManager.startConfigPortal(config.global.hostname.c_str());
+        wifiManager.startConfigPortal(config.GetGlobalConfig().hostname.c_str());
     }
     else
     {
         // setup static ip if it's set in config and SW_WIFI_RESET is not pressed
-        if (config.global.isStaticIPEnabled)
+        if (config.GetGlobalConfig().isStaticIPEnabled)
         {
-            Serial.printf("Found static IP config, set IP to %s\n", config.global.local.toString().c_str());
-            wifiManager.setSTAStaticIPConfig(config.global.local, config.global.gateway, config.global.subnet,
-                                             config.global.primaryDNS, config.global.secondaryDNS);
+            Serial.printf("Found static IP config, set IP to %s\n", config.GetGlobalConfig().local.toString().c_str());
+            wifiManager.setSTAStaticIPConfig(config.GetGlobalConfig().local, config.GetGlobalConfig().gateway, config.GetGlobalConfig().subnet,
+                                             config.GetGlobalConfig().primaryDNS, config.GetGlobalConfig().secondaryDNS);
         }
         if (!wifiManager.autoConnect())
         {
@@ -257,13 +256,13 @@ void setup()
     Serial.println("WiFi connected!");
 
     // setup mDNS
-    if (!MDNS.begin(config.global.hostname.c_str()))
+    if (!MDNS.begin(config.GetGlobalConfig().hostname.c_str()))
     {
         Serial.println("Error setting up MDNS responder!");
     }
     else
     {
-        Serial.printf("mDNS responder started with hostname %s.local\n", config.global.hostname.c_str());
+        Serial.printf("mDNS responder started with hostname %s.local\n", config.GetGlobalConfig().hostname.c_str());
     }
 
     // show IP
@@ -271,7 +270,7 @@ void setup()
 
     // sync time
     showDisplay(DisplayState::SYNC);
-    setSyncProvider(getNtpTime);
+    setSyncProvider(updateNTPTime);
 
     // print current time
     struct tm timeinfo;
@@ -303,6 +302,7 @@ void setup()
     server.on("/update", HTTP_GET, handleOTAUpdateForm);
     server.on("/update_firmware", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUploadFirmware);
     server.on("/update_filesystem", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUploadFilesystem);
+    server.on("/reboot", HTTP_GET, handleReboot);
 
     // setup parallel task
     xTaskCreatePinnedToCore(
@@ -357,7 +357,7 @@ void checkAlarmTask(void *parameter)
             }
             Serial.printf(", uptime %ds WiFi [%d]: %s, RSSI %d, heap %d, stack %d next alarm: %s\n",
                           (millis() - startTime) / 1000, WiFi.isConnected(), WiFi.SSID().c_str(), WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL),
-                          config.alarms[config.alarmNext].toString().c_str());
+                          config.GetNextAlarmTime().toString().c_str());
             lastRSSI = millis();
         }
 
@@ -412,7 +412,7 @@ void initSDCardStructure(fs::FS &fs)
 void updateAlarms()
 {
     // sort alarms by date
-    sortArray(config.alarms, config.alarmSize, compareAlarm);
+    config.SortAlarmTimes();
     Serial.println("Alarms after sort:");
     printAlarms();
     Serial.println();
@@ -428,30 +428,14 @@ void nextAlarm()
 {
     // select next alarm
     struct tm timeinfo;
-    bool selected = false;
     if (getLocalTime(&timeinfo))
     {
-        for (size_t i = 0; i < config.alarmSize; i++)
-        {
-            if (config.alarms[i] > timeinfo)
-            {
-                config.alarmNext = i;
-                selected = true;
-                break;
-            }
-        }
+        config.SelectNextAlarmTime(timeinfo);
+        Serial.println("Current time is:");
+        printTime(timeinfo);
+        Serial.println();
+        Serial.println("Next Alarm is " + config.GetNextAlarmTime().toString());
     }
-
-    // if no alarm time is bigger, alarm is the first one in the new week
-    if (!selected)
-    {
-        config.alarmNext = 0;
-    }
-
-    Serial.println("Current time is:");
-    printTime(timeinfo);
-    Serial.println();
-    Serial.println("Next Alarm is " + config.alarms[config.alarmNext].toString());
 }
 
 /**************************************
@@ -471,20 +455,20 @@ bool checkPlayAlarm()
     ledSystem = SYSTEM_LED_STATE::STATE_NONE;
 
     // check if timer is reached and play file
-    if (config.alarms[config.alarmNext] < timeinfo && config.alarms[config.alarmNext].differenceSec(timeinfo) < 10)
+    auto &nextAlarm = config.GetNextAlarmTime();
+    if (nextAlarm < timeinfo && nextAlarm.differenceSec(timeinfo) < 10)
     {
-        Serial.println("Playing Alarm " + config.alarms[config.alarmNext].toString());
+        Serial.println("Playing Alarm " + nextAlarm.toString());
 
         // stop current playback and set audio volume
         audio.stop();
-        audio.setVolume(config.global.audio_volume);
+        audio.setVolume(config.GetGlobalConfig().audio_volume);
 
-        auto alarm = config.alarms[config.alarmNext];
-        auto stream = alarm.getStream();
-        Serial.printf("Playing %s of type %s from %s\n", alarm.name.c_str(),
+        auto stream = nextAlarm.getStream();
+        Serial.printf("Playing %s of type %s from %s\n", nextAlarm.getName().c_str(),
                       AlarmClock::MusicStream::typeToString(stream.getType()).c_str(),
                       stream.getURL().c_str());
-        Serial.printf("Audio volume: %f\n", config.global.audio_volume);
+        Serial.printf("Audio volume: %f\n", config.GetGlobalConfig().audio_volume);
 
         switch (stream.getType())
         {
@@ -502,8 +486,8 @@ bool checkPlayAlarm()
         }
 
         // select next alarm
-        config.alarmNext = (config.alarmNext + 1) % config.alarmSize;
-        Serial.println("Next Alarm is " + config.alarms[config.alarmNext].toString());
+        config.IncrementNextAlarmTime();
+        Serial.println("Next Alarm is " + config.GetNextAlarmTime().toString());
         return true;
     }
 
@@ -636,9 +620,9 @@ void setSystemLEDState(SYSTEM_LED_STATE state)
  *************************************/
 void printAlarms()
 {
-    for (size_t i = 0; i < config.alarmSize; i++)
+    for (size_t i = 0; i < config.getAalarmTimes().size(); i++)
     {
-        auto a = config.alarms[i];
+        auto a = config.getAalarmTimes()[i];
         Serial.printf("[%02d] Alarm %s\n", i, a.toString().c_str());
     }
 }
@@ -736,7 +720,7 @@ void WiFiEvent(WiFiEvent_t event)
         break;
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
         // ESP_LOGI( TAG, "STA IPv4: ");
-        ESP_LOGI(TAG, "%s", WiFi.localIP());
+        ESP_LOGI(TAG, "%s", WiFi.localIP().toString().c_str());
         break;
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
     case ARDUINO_EVENT_WIFI_STA_LOST_IP:
@@ -795,10 +779,17 @@ void handleAPIConfig(AsyncWebServerRequest *request)
 
         // update config and reinit alarms
         config.LoadFromPath(fsConfig, configPath);
+        updateNTPTime();
         updateAlarms();
     }
 
-    request->send(fsConfig, configPath, "application/json");
+    // send loaded config
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    DynamicJsonDocument doc(JSON_BUFFER);
+    config.Save(doc);
+    serializeJsonPretty(doc, Serial);
+    serializeJson(doc, *response);
+    request->send(response);
 }
 
 /**
@@ -946,7 +937,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
 
     // send JSON
     AsyncResponseStream *response = request->beginResponseStream("application/json");
-    serializeJson(doc, Serial);
+    serializeJsonPretty(doc, Serial);
     serializeJson(doc, *response);
     request->send(response);
 }
@@ -1129,7 +1120,7 @@ void handleAPIState(AsyncWebServerRequest *request)
     doc["sd_used"] = int64String(SD_MMC.usedBytes());
     doc["sd_total"] = int64String(SD_MMC.totalBytes());
     doc["cpu_frequ"] = ESP.getCpuFreqMHz();
-    doc["alarm_next"] = config.alarms[config.alarmNext].toString();
+    doc["alarm_next"] = config.GetNextAlarmTime().toString();
 
     // send JSON response
     AsyncResponseStream *response = request->beginResponseStream("application/json");
@@ -1249,25 +1240,31 @@ void handleOTAUpdateUploadFilesystem(AsyncWebServerRequest *request, String file
     }
 }
 
+void handleReboot(AsyncWebServerRequest *request)
+{
+    request->send(200, "text/html",
+                  "Rebooting...please try to reload page in a couple of seconds.");
+    ESP.restart();
+}
+
 /**************************************
  *
  * NTP time sync provider
  *
  *************************************/
-time_t getNtpTime()
+time_t updateNTPTime()
 {
     struct tm timeinfo;
     if (!WiFi.isConnected())
     {
         Serial.println("WiFi not connected, cannot config time!");
-        return mktime(&timeinfo) + config.global.gmt_offset_s + config.global.dst_offset_s;
+        return mktime(&timeinfo);
     }
     // configTime(-3600, -3600, "69.10.161.7");
 
-    Serial.printf("Update time with GMT+%02d and DST: %d\n",
-                  config.global.gmt_offset_s / 3600, config.global.dst_offset_s / 3600);
+    Serial.printf("Update time with TZ: %s\n", config.GetPOSIXTimezone().c_str());
 
-    configTime(config.global.gmt_offset_s, config.global.dst_offset_s, "0.de.pool.ntp.org", "1.de.pool.ntp.org", "69.10.161.7");
+    configTime(0, 0, "0.de.pool.ntp.org", "1.de.pool.ntp.org", "69.10.161.7");
 
     if (!getLocalTime(&timeinfo))
     {
@@ -1278,7 +1275,18 @@ time_t getNtpTime()
         Serial.print("Synced time to: ");
         Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
     }
-    return mktime(&timeinfo) + config.global.gmt_offset_s + config.global.dst_offset_s;
+
+    //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
+    Serial.print("Time before TZ set: ");
+    printTime(timeinfo);
+    Serial.println();
+    setenv("TZ", config.GetPOSIXTimezone().c_str(), 1);
+    tzset();
+    Serial.print("Time after TZ set: ");
+    printTime(timeinfo);
+    Serial.println();
+
+    return mktime(&timeinfo);
 }
 
 /**************************************
@@ -1288,26 +1296,10 @@ time_t getNtpTime()
  *************************************/
 void printTime(struct tm info)
 {
-    Serial.printf("%02d.%02d.%d %02d:%02d:%02d %s, dst: %d",
+    String tz = getenv("TZ");
+    Serial.printf("%s %02d.%02d.%d %02d:%02d:%02d %s, dst: %d",
+                  dowName(info.tm_wday).c_str(),
                   info.tm_mday, info.tm_mon + 1, info.tm_year + 1900,
                   info.tm_hour, info.tm_min, info.tm_sec,
-                  dowName(info.tm_wday).c_str(),
-                  info.tm_isdst);
-}
-
-/**************************************
- *
- * get dow name
- *
- *************************************/
-bool compareAlarm(AlarmClock::Alarm a, AlarmClock::Alarm b)
-{
-    if (a > b)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+                  tz.c_str(), info.tm_isdst);
 }

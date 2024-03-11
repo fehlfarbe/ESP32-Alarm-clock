@@ -65,33 +65,22 @@
             <div data-bind="ifnot: general">
                 <div class="spinner-border" role="status">
                     <span class="sr-only">Loading...</span>
-                  </div>
+                </div>
             </div>
             <form class="needs-validation" novalidate data-bind="if: general">
                 <div class="row">
                     <div class="col-md-2">
-                        <label for="gmt_offset" data-bind="text: l().timezone">Timezone GMT+</label>
-                        <input type="number" min="-12" max="12" class="form-control" id="gmt_offset" placeholder=""
-                            data-bind="value: general().gmt_offset_h" required>
-                        <div class="invalid-feedback">
-                            Valid first name is required.
-                        </div>
-                    </div>
-                    <div class="col-md-1">
-                        <label for="dst_offset" data-bind="text: l().dst">DST</label>
-                        <div style="height: 100%; padding: 0; vertical-align: top">
-                            <input type="checkbox" id="dst_offset" placeholder=""
-                                data-bind="checked: general().dst_offset_h" required
-                                style="height: 35px; width: 35px; border-radius: 5px; margin: 0;">
-                        </div>
+                        <label for="tz" data-bind="text: l().timezone">Timezone GMT+</label>
+                        <select class="custom-select d-block w-100 nav-item" id="general_tz"
+                            data-bind="options: $root.timezones, optionsText: 'name', optionsValue: 'value', value: general().tz"
+                            placeholder=""> </select>
                     </div>
                 </div>
-
                 <div class="row">
                     <div class="col-md-6">
                         <label for="audio_volume" data-bind="text: l().alarm_volume">Alarm Audio Volume</label>
-                        <input type="range" min="0" max="1" step="0.05" class="custom-range" id="audio_volume" placeholder=""
-                            data-bind="value: general().audio_volume" required>
+                        <input type="range" min="0" max="1" step="0.05" class="custom-range" id="audio_volume"
+                            placeholder="" data-bind="value: general().audio_volume" required>
                         <div class="invalid-feedback">
                             Valid last name is required.
                         </div>
@@ -256,7 +245,7 @@
             <div data-bind="ifnot: songsLoaded">
                 <div class="spinner-border" role="status">
                     <span class="sr-only">Loading...</span>
-                  </div>
+                </div>
             </div>
             <table class="table" data-bind="if: songsLoaded">
                 <thead>

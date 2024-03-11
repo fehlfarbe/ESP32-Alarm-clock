@@ -5,7 +5,7 @@
  * get dow name
  *
  *************************************/
-String dowName(int dow){
+String dowName(uint8_t dow){
     switch (dow)
     {
     case 0:

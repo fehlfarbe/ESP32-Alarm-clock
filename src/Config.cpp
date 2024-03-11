@@ -1,4 +1,5 @@
 #include "Config.h"
+#include <ArduinoSort.h>
 
 namespace AlarmClock
 {
@@ -29,6 +30,8 @@ namespace AlarmClock
         // load alarm settings
         JsonArray alarmsJSON = doc["alarms"];
         size_t i = 0;
+        alarms.clear();
+        alarmTimes.clear();
         for (auto a : alarmsJSON)
         {
             if (i == MAX_ALARMS)
@@ -47,16 +50,27 @@ namespace AlarmClock
             String file = a["file"];
             int hour = (int)a["hour"];
             int min = (int)a["minute"];
-            JsonArray dow = a["dow"];
-
-            for (const auto &d : dow)
+            DaysOfWeek dow;
+            for (const auto &d : a["dow"].as<JsonArray>())
             {
                 int day = (int)d;
-                Serial.printf("Alarm %s %s %02d:%02d %s\n", name.c_str(), dowName(day).c_str(), hour, min, file.c_str());
-                alarms[i++] = AlarmClock::Alarm(name, day, hour, min, stream);
+                dow.push_back(d.as<int>());
+            }
+
+            // push to list
+            AlarmClock::Alarm alarm(name, dow, hour, min, stream);
+            alarms.push_back(alarm);
+            Serial.printf("Alarm %s\n", alarm.toString().c_str());
+            for (const auto &day : alarm.dow)
+            {
+                if (alarmTimes.full())
+                {
+                    Serial.println("Maximum number of alarm times reached!");
+                    break;
+                }
+                alarmTimes.push_back(AlarmTime(alarm, day));
             }
         }
-        alarmSize = i;
 
         // load general settings
         auto general = doc["general"];
@@ -66,14 +80,9 @@ namespace AlarmClock
             global.audio_volume = general["audio_volume"].as<float>();
         }
 
-        if (general.containsKey("gmt_offset"))
+        if (general.containsKey("tz"))
         {
-            global.gmt_offset_s = (uint32_t)general["gmt_offset"];
-        }
-
-        if (general.containsKey("dst_offset"))
-        {
-            global.dst_offset_s = (uint32_t)general["dst_offset"];
+            global.tz = general["tz"].as<String>();
         }
 
         // load network settings
@@ -131,16 +140,16 @@ namespace AlarmClock
     {
         // save alarms
         auto alarmsJSON = doc.createNestedArray("alarms");
-        for (size_t i = 0; i < alarmSize; i++)
+        for (auto &alarm : alarms)
         {
-            alarmsJSON.add(alarms[i].toJSON());
+            auto alarmJSON = alarmsJSON.createNestedObject();
+            alarm.toJSON(alarmJSON);
         }
 
         // save general settings
         auto generalJSON = doc.createNestedObject("general");
         generalJSON["audio_volume"] = global.audio_volume;
-        generalJSON["gmt_offset"] = global.gmt_offset_s;
-        generalJSON["dst_offset"] = global.dst_offset_s;
+        generalJSON["tz"] = global.tz;
 
         // save network settings
         auto networkJSON = doc.createNestedObject("network");
@@ -156,5 +165,52 @@ namespace AlarmClock
     GlobalSettings &Config::GetGlobalConfig()
     {
         return global;
+    }
+
+    Array<AlarmTime, MAX_ALARMS> &Config::getAalarmTimes()
+    {
+        return alarmTimes;
+    }
+
+    AlarmTime &Config::GetNextAlarmTime()
+    {
+        return alarmTimes[alarmNext];
+    }
+
+    void Config::SortAlarmTimes()
+    {
+        // sort alarms by date
+        sortArray(alarmTimes.data(), alarmTimes.size());
+    }
+
+    void Config::SelectNextAlarmTime(tm &timeinfo)
+    {
+        bool selected = false;
+        for (size_t i = 0; i < alarmTimes.size(); i++)
+        {
+            if (alarmTimes[i] > timeinfo)
+            {
+                alarmNext = i;
+                selected = true;
+                break;
+            }
+        }
+
+        // if no alarm time is bigger, alarm is the first one in the new week
+        if (!selected)
+        {
+            alarmNext = 0;
+        }
+    }
+
+    void Config::IncrementNextAlarmTime()
+    {
+        alarmNext = (alarmNext + 1) % alarmTimes.size();
+    }
+
+    String Config::GetPOSIXTimezone()
+    {
+        auto idx = global.tz.indexOf("|");
+        return global.tz.substring(idx + 1);
     }
 }

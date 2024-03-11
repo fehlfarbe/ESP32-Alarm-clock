@@ -55,6 +55,7 @@ public:
 protected:
     void initI2S(uint8_t pinBCK, uint8_t pinData, uint8_t pinWS, uint8_t pinDin);
     void initRadio(uint8_t scl = SCL, uint8_t sda = SDA);
+    void resetStreams();
 
     RDA5807FP radio;
     I2SStream i2s;
@@ -71,6 +72,8 @@ protected:
     Media nextMedia;
     fs::File currentAudioFile;
     PlayMode playMode;
+
+    SemaphoreHandle_t playbackMutex = nullptr;
 };
 
 #endif // AUDIOPROVIDER_H

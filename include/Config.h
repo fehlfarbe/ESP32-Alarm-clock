@@ -6,16 +6,17 @@
 
 #include <FS.h>
 #include <ArduinoJson.h>
+#include <Array.h>
 #include "utils.h"
 #include "Alarm.h"
+#include "AlarmTime.h"
 
 namespace AlarmClock
 {
     struct GlobalSettings
     {
-        // time
-        uint32_t gmt_offset_s = 0;
-        uint32_t dst_offset_s = 0;
+        // timezone
+        String tz = "Etc/UTC|UTC0";
         // audio
         float audio_volume = 0.5f;
         // network
@@ -40,12 +41,18 @@ namespace AlarmClock
         void Save(DynamicJsonDocument &doc);
 
         GlobalSettings &GetGlobalConfig();
+        Array<AlarmTime, MAX_ALARMS> &getAalarmTimes();
+        AlarmTime &GetNextAlarmTime();
+        void SortAlarmTimes();
+        void SelectNextAlarmTime(struct tm &timeinfo);
+        void IncrementNextAlarmTime();
 
-    public:
+        String GetPOSIXTimezone();
+
+    private:
         GlobalSettings global;
-        Alarm alarms[MAX_ALARMS];
-
-        size_t alarmSize = 0;
+        Array<Alarm, MAX_ALARMS> alarms;
+        Array<AlarmTime, MAX_ALARMS> alarmTimes;
         size_t alarmNext = 0;
     };
 }
