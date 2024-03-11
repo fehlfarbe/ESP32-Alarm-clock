@@ -559,7 +559,7 @@ function modalSuccess(msg) {
 }
 
 
-function Alarm(name, dow, hour, minute, file) {
+function Alarm(name, dow, hour, minute, file, enabled) {
     // function Alarm(id, alarm) {
     var self = this;
     self.name = ko.observable(name);
@@ -567,6 +567,7 @@ function Alarm(name, dow, hour, minute, file) {
     self.hour = ko.observable(hour);
     self.minute = ko.observable(minute);
     self.file = ko.observable(file);
+    self.enabled = ko.observable(enabled);
 
     self.timeForm = ko.pureComputed({
         read: function () {
@@ -595,6 +596,7 @@ function Alarm(name, dow, hour, minute, file) {
         self.dow().forEach(d => {
             obj.dow.push(d.value);
         });
+        obj.enabled = self.enabled();
         return obj;
     }
 }
@@ -722,13 +724,11 @@ function SettingsViewModel() {
     ];
 
     // time zones
-    self.timezones = ko.computed(function() {
+    self.timezones = ko.computed(function () {
         var opts = [];
-        for(var key in timezones)
-        {
-            if(timezones.hasOwnProperty(key))
-            {
-                opts.push({name: key, value: key+"|"+timezones[key]});
+        for (var key in timezones) {
+            if (timezones.hasOwnProperty(key)) {
+                opts.push({ name: key, value: key + "|" + timezones[key] });
             }
         }
         return opts;
@@ -787,7 +787,8 @@ function SettingsViewModel() {
                     dowArray,
                     a.hour,
                     a.minute,
-                    song);
+                    song,
+                    a.enabled);
             });
             self.alarms(mappedAlarms);
 
@@ -812,7 +813,7 @@ function SettingsViewModel() {
 
     // Operations
     self.addAlarm = function () {
-        self.alarms.push(new Alarm("new Alarm", [self.weekdays[0]], 0, 0, self.songs[0]));
+        self.alarms.push(new Alarm("new Alarm", [self.weekdays[0]], 0, 0, self.songs[0], true));
         $('.selectpicker').selectpicker();
     }
     self.removeAlarm = function (alarm) { self.alarms.remove(alarm) }

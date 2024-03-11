@@ -94,6 +94,11 @@
                 </div>
                 <div id="alarms" data-bind="foreach: alarms">
                     <div class="row">
+                        <div class="col-md-1">
+                            <label for="alarm_enabled" data-bind="text: $root.l().enabled">Enabled</label>
+                            <input type="checkbox" class="form-control" id="alarm_enabled" placeholder=""
+                                data-bind="checked: enabled" required>
+                        </div>
                         <div class="col-md-3">
                             <label for="alarm_name" data-bind="text: $root.l().name">Name</label>
                             <input type="text" class="form-control" id="alarm_name" placeholder=""
@@ -120,7 +125,7 @@
                                 Valid last name is required.
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="alarm_song" data-bind="text: $root.l().song">Song/Stream</label>
                             <select class="custom-select d-block w-100" id="alarm_song"
                                 data-bind="options: $root.songs, value: file, optionsText: 'name'" placeholder=""
@@ -178,7 +183,7 @@
                             <label for="network_static_enabled" data-bind="text: l().network_static_enabled">Static
                                 IP</label>
                             <div style="height: 100%; padding: 0; vertical-align: top">
-                                <input type="checkbox" id="dst_offset" placeholder=""
+                                <input type="checkbox" id="network_static_enabled" placeholder=""
                                     data-bind="checked: network().static_ip_enabled" required
                                     style="height: 35px; width: 35px; border-radius: 5px; margin: 0;">
                             </div>

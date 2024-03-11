@@ -16,20 +16,25 @@ namespace AlarmClock
     {
     public:
         Alarm();
-        Alarm(String name, Array<int, MAX_DOW> dow, int hour, int minute, MusicStream stream);
+        Alarm(String name, DaysOfWeek dow, uint8_t hour, uint8_t minute, MusicStream stream, bool enabled);
         ~Alarm();
 
         String toString();
         void toJSON(JsonObject &alarm);
 
+        bool isEnabled();
+        String getName() const;
+        DaysOfWeek &getDow();
+        uint8_t getHour() const;
+        uint8_t getMinute() const;
         MusicStream &getStream();
 
-    public:
+    private:
         bool enabled;
         String name;
         DaysOfWeek dow;
-        int hour;
-        int minute;
+        uint8_t hour;
+        uint8_t minute;
         MusicStream stream;
     };
 }

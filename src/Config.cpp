@@ -56,19 +56,23 @@ namespace AlarmClock
                 int day = (int)d;
                 dow.push_back(d.as<int>());
             }
+            bool enabled = a["enabled"].as<bool>();
 
             // push to list
-            AlarmClock::Alarm alarm(name, dow, hour, min, stream);
+            AlarmClock::Alarm alarm(name, dow, hour, min, stream, enabled);
             alarms.push_back(alarm);
             Serial.printf("Alarm %s\n", alarm.toString().c_str());
-            for (const auto &day : alarm.dow)
+            if (alarm.isEnabled())
             {
-                if (alarmTimes.full())
+                for (const auto &day : alarm.getDow())
                 {
-                    Serial.println("Maximum number of alarm times reached!");
-                    break;
+                    if (alarmTimes.full())
+                    {
+                        Serial.println("Maximum number of alarm times reached!");
+                        break;
+                    }
+                    alarmTimes.push_back(AlarmTime(alarm, day));
                 }
-                alarmTimes.push_back(AlarmTime(alarm, day));
             }
         }
 

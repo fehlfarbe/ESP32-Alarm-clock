@@ -6,7 +6,7 @@ namespace AlarmClock
     {
         name = "null";
     }
-    Alarm::Alarm(String name, Array<int, MAX_DOW> dow, int hour, int minute, MusicStream stream) : name(name), dow(dow), hour(hour), minute(minute), stream(stream)
+    Alarm::Alarm(String name, DaysOfWeek dow, uint8_t hour, uint8_t minute, MusicStream stream, bool enabled) : name(name), dow(dow), hour(hour), minute(minute), stream(stream), enabled(enabled)
     {
     }
 
@@ -21,6 +21,12 @@ namespace AlarmClock
         for (const auto &day : dow)
         {
             dowNames += dowName(day) + ", ";
+        }
+
+        if(enabled) {
+            s += "[x]";
+        } else {
+            s += "[ ]";
         }
         s += name + ": " + dowNames + " " + hour + ":" + minute + " (" + stream.getURL() + ")";
         return s;
@@ -52,5 +58,30 @@ namespace AlarmClock
         default:
             Serial.printf("Wrong MusicType %s for alarm %s\n", stream.typeToString(stream.getType()).c_str(), name.c_str());
         }
+        alarm["enabled"] = enabled;
+    }
+    bool Alarm::isEnabled()
+    {
+        return enabled;
+    }
+    String Alarm::getName() const
+    {
+        return name;
+    }
+    DaysOfWeek &Alarm::getDow()
+    {
+        return dow;
+    }
+    uint8_t Alarm::getHour() const
+    {
+        return hour;
+    }
+    uint8_t Alarm::getMinute() const
+    {
+        return minute;
+    }
+    MusicStream &Alarm::getStream()
+    {
+        return stream;
     }
 }

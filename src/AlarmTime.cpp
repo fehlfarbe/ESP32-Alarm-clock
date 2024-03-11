@@ -17,13 +17,13 @@ namespace AlarmClock
     String AlarmTime::toString()
     {
         String s;
-        s += alarm.name + ": " + dowName(dow) + " " + alarm.hour + ":" + alarm.minute + " (" + alarm.stream.getURL() + ")";
+        s += alarm.getName() + ": " + dowName(dow) + " " + alarm.getHour() + ":" + alarm.getMinute() + " (" + alarm.getStream().getURL() + ")";
         return s;
     }
 
     int AlarmTime::toSec() const
     {
-        return (dow * 86400) + (alarm.hour * 3600) + alarm.minute * 60;
+        return (dow * 86400) + (alarm.getHour() * 3600) + alarm.getMinute() * 60;
     }
 
     int AlarmTime::differenceSec(const struct tm timeinfo)
@@ -38,12 +38,12 @@ namespace AlarmClock
 
     MusicStream &AlarmTime::getStream()
     {
-        return alarm.stream;
+        return alarm.getStream();
     }
 
     String AlarmTime::getName()
     {
-        return alarm.name;
+        return alarm.getName();
     }
 
     bool AlarmTime::operator<(const AlarmTime &b) const
