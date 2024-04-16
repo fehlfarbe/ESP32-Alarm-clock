@@ -55,8 +55,6 @@
 #define SCL 10
 #define SDA 11
 
-#define JSON_BUFFER 2048 * 5
-
 // Global variables
 AudioProvider audio;
 unsigned long startTime = millis();
@@ -82,7 +80,7 @@ enum SYSTEM_LED_STATE
     STATE_TIME_NOT_SYNCED
 };
 
-#define LED_MAX_BRIGHTNESS 70
+#define LED_MAX_BRIGHTNESS 150
 #define LED_STATUS_IDX 0
 #define LED_WIFI_IDX 1
 CRGB led_status[2];
@@ -176,7 +174,7 @@ void setup()
     audio.init(I2S_BCLK, I2S_DOUT, I2S_WS, I2S_RADIO_OUT, SCL, SDA);
     audio.setVolume(config.GetGlobalConfig().audio_volume); // 0...1
     digitalWrite(I2S_MUTE, LOW);
-    digitalWrite(I2S_DEEM, LOW);
+    digitalWrite(I2S_DEEM, HIGH);
 
     // setup display
     display.clear();
@@ -185,6 +183,7 @@ void setup()
     // Initialize LITTLEFS
     if (!fsWWW.begin(false, "/littlefs", 10))
     {
+        showDisplay(DisplayState::FS_ERR);
         Serial.println("An Error has occurred while mounting LITTLEFS");
         ledSystem = SYSTEM_LED_STATE::STATE_FS_ERR;
         while (true)
@@ -208,7 +207,7 @@ void setup()
     if (cardType == CARD_NONE)
     {
         Serial.println("No SD card attached");
-        showDisplay(DisplayState::SD_ERR);
+        showDisplay(DisplayState::SD_ERR_NO_SD);
         ledSystem = SYSTEM_LED_STATE::STATE_SD_NO_SD;
         while (true)
             ;
@@ -519,6 +518,20 @@ void showDisplay(DisplayState state)
         SEG_E | SEG_G | SEG_D | SEG_C | SEG_B, // d
         0,
         0};
+    const uint8_t sd_err_no_sd[] = {
+        SEG_E | SEG_G | SEG_C,                 // n
+        SEG_E | SEG_G | SEG_D | SEG_C,         // o
+        SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
+        SEG_E | SEG_G | SEG_D | SEG_C | SEG_B, // d
+        0,
+        0};
+    const uint8_t fs_err[] = {
+        SEG_E | SEG_G | SEG_C,                 // n
+        SEG_E | SEG_G | SEG_D | SEG_C,         // o
+        SEG_A | SEG_F | SEG_G | SEG_B,         // F
+        SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
+        0,
+        0};
     const uint8_t ap[] = {
         SEG_A | SEG_F | SEG_B | SEG_B | SEG_E | SEG_C, // A
         SEG_A | SEG_F | SEG_G | SEG_B | SEG_E,         // P
@@ -550,6 +563,12 @@ void showDisplay(DisplayState state)
         break;
     case DisplayState::SD_ERR:
         display.setSegments(sd_err);
+        break;
+    case DisplayState::SD_ERR_NO_SD:
+        display.setSegments(sd_err_no_sd);
+        break;
+    case DisplayState::FS_ERR:
+        display.setSegments(fs_err);
         break;
     default:
         break;
@@ -751,7 +770,7 @@ void handleAPIConfig(AsyncWebServerRequest *request)
         {
             Serial.println("Param [" + String(i) + "]: " + request->getParam(i)->value());
         }
-        DynamicJsonDocument doc(JSON_BUFFER);
+        JsonDocument doc;
         DeserializationError error = deserializeJson(doc, request->getParam(0)->value());
 
         // Test if parsing succeeds.
@@ -785,7 +804,7 @@ void handleAPIConfig(AsyncWebServerRequest *request)
 
     // send loaded config
     AsyncResponseStream *response = request->beginResponseStream("application/json");
-    DynamicJsonDocument doc(JSON_BUFFER);
+    JsonDocument doc;
     config.Save(doc);
     serializeJsonPretty(doc, Serial);
     serializeJson(doc, *response);
@@ -807,7 +826,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
         if (request->getParam(0)->isPost())
         {
             // create JSON buffer
-            DynamicJsonDocument req(JSON_BUFFER);
+            JsonDocument req;
             DeserializationError error = deserializeJson(req, request->getParam(0)->value());
             if (error)
             {
@@ -834,7 +853,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
                 if (type == AlarmClock::MusicType::FM || type == AlarmClock::MusicType::STREAM)
                 {
                     // read current streams
-                    DynamicJsonDocument doc(JSON_BUFFER);
+                    JsonDocument doc;
                     DeserializationError error;
                     if (!readJSONFile(fsSongs, streamsPath, doc, error))
                     {
@@ -874,7 +893,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
             {
                 // add new stream / fm station
                 // read current streams
-                DynamicJsonDocument doc(JSON_BUFFER);
+                JsonDocument doc;
                 JsonArray streams = doc.to<JsonArray>();
                 DeserializationError error;
                 if (!readJSONFile(fsSongs, streamsPath, doc, error))
@@ -885,7 +904,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
                     return;
                 }
                 // copy only necessary fields
-                JsonObject stream = streams.createNestedObject();
+                JsonObject stream = streams.add<JsonObject>();
                 stream["name"] = req["stream"]["name"];
                 stream["url"] = req["stream"]["url"];
                 stream["type"] = req["stream"]["type"];
@@ -911,7 +930,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
         }
     }
     // create JSON buffer and read streams
-    DynamicJsonDocument doc(JSON_BUFFER);
+    JsonDocument doc;
     JsonArray array = doc.to<JsonArray>();
     DeserializationError error;
     if (!readJSONFile(fsSongs, streamsPath, doc, error))
@@ -927,7 +946,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
     while (file)
     {
         Serial.println(file.name());
-        auto f = array.createNestedObject();
+        auto f = array.add<JsonObject>();
         f["name"] = String(file.name()).substring(String(file.name()).lastIndexOf("/") + 1);
         f["url"] = String(file.name());
         f["size"] = file.size();
@@ -986,7 +1005,7 @@ void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_
     if (final)
     {
         Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index + len);
-        DynamicJsonDocument buffer(JSON_BUFFER);
+        JsonDocument buffer;
         buffer["name"] = filename;
         buffer["url"] = filename;
         buffer["size"] = fsUploadFile.position();
@@ -1014,7 +1033,7 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
         {
             // Serial.println(request->getParam(0)->value());
             // create JSON buffer
-            DynamicJsonDocument doc(512);
+            JsonDocument doc;
             DeserializationError error = deserializeJson(doc, request->getParam(0)->value());
             if (error)
             {
@@ -1085,7 +1104,7 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
     }
 
     // create JSON response
-    DynamicJsonDocument state(JSON_BUFFER);
+    JsonDocument state;
     Serial.printf("Get volume %f\n", audio.getVolume());
     state["volume"] = audio.getVolume();
     state["position"] = audio.getFilePosition();
@@ -1109,7 +1128,7 @@ void handleAPIState(AsyncWebServerRequest *request)
 {
 
     // create JSON response
-    DynamicJsonDocument doc(JSON_BUFFER);
+    JsonDocument doc;
     doc["heap_free"] = ESP.getFreeHeap();
     doc["heap_size"] = ESP.getHeapSize();
     doc["chip_rev"] = ESP.getChipRevision();

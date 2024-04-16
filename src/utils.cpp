@@ -5,7 +5,8 @@
  * get dow name
  *
  *************************************/
-String dowName(uint8_t dow){
+String dowName(uint8_t dow)
+{
     switch (dow)
     {
     case 0:
@@ -37,7 +38,7 @@ String dowName(uint8_t dow){
  * @return true success
  * @return false not success, more info in error argument
  */
-bool readJSONFile(fs::FS &fs, String filePath, DynamicJsonDocument &doc, DeserializationError &error)
+bool readJSONFile(fs::FS &fs, String filePath, JsonDocument &doc, DeserializationError &error)
 {
     // add webstreams from streams
     File file = fs.open(filePath, FILE_READ, false);
@@ -63,7 +64,7 @@ bool readJSONFile(fs::FS &fs, String filePath, DynamicJsonDocument &doc, Deseria
  * @return true if successful
  * @return false if not successful
  */
-bool writeJSONFile(fs::FS &fs, String filePath, DynamicJsonDocument &doc)
+bool writeJSONFile(fs::FS &fs, String filePath, JsonDocument &doc)
 {
     // open file
     File f = fs.open(filePath, FILE_WRITE, true);

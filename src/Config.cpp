@@ -13,7 +13,7 @@ namespace AlarmClock
         String json = configFile.readString();
         configFile.close();
         Serial.println(json);
-        DynamicJsonDocument doc(JSON_BUFFER);
+        JsonDocument doc;
         DeserializationError error = deserializeJson(doc, json);
         if (error)
         {
@@ -25,7 +25,7 @@ namespace AlarmClock
         return Load(doc);
     }
 
-    bool Config::Load(DynamicJsonDocument &doc)
+    bool Config::Load(JsonDocument &doc)
     {
         // load alarm settings
         JsonArray alarmsJSON = doc["alarms"];
@@ -133,30 +133,30 @@ namespace AlarmClock
 
     void Config::Save(fs::FS &fs, const String &path)
     {
-        DynamicJsonDocument doc(JSON_BUFFER);
+        JsonDocument doc;
         serializeJsonPretty(doc, Serial);
         Save(doc);
         serializeJsonPretty(doc, Serial);
         writeJSONFile(fs, path, doc);
     }
 
-    void Config::Save(DynamicJsonDocument &doc)
+    void Config::Save(JsonDocument &doc)
     {
         // save alarms
-        auto alarmsJSON = doc.createNestedArray("alarms");
+        auto alarmsJSON = doc["alarms"].to<JsonArray>();
         for (auto &alarm : alarms)
         {
-            auto alarmJSON = alarmsJSON.createNestedObject();
+            auto alarmJSON = alarmsJSON.add<JsonObject>();
             alarm.toJSON(alarmJSON);
         }
 
         // save general settings
-        auto generalJSON = doc.createNestedObject("general");
+        auto generalJSON = doc["general"].to<JsonObject>();
         generalJSON["audio_volume"] = global.audio_volume;
         generalJSON["tz"] = global.tz;
 
         // save network settings
-        auto networkJSON = doc.createNestedObject("network");
+        auto networkJSON = doc["network"].to<JsonObject>();
         networkJSON["hostname"] = global.hostname;
         networkJSON["static_ip_enabled"] = global.isStaticIPEnabled;
         networkJSON["static_ip"] = global.local;

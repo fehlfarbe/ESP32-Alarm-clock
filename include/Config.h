@@ -2,7 +2,6 @@
 #define CONFIG_H
 
 #define MAX_ALARMS 100
-#define JSON_BUFFER 2048 * 2
 
 #include <FS.h>
 #include <ArduinoJson.h>
@@ -35,10 +34,10 @@ namespace AlarmClock
         Config();
 
         bool LoadFromPath(fs::FS &fs, const String &path);
-        bool Load(DynamicJsonDocument &doc);
+        bool Load(JsonDocument &doc);
 
         void Save(fs::FS &fs, const String &path);
-        void Save(DynamicJsonDocument &doc);
+        void Save(JsonDocument &doc);
 
         GlobalSettings &GetGlobalConfig();
         Array<AlarmTime, MAX_ALARMS> &getAalarmTimes();
