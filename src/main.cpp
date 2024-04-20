@@ -601,9 +601,13 @@ void setWiFiLEDState(WIFI_LED_STATE state)
     if (WiFi.isConnected())
     {
         // show wifi strength
-        auto rssi = map(abs(WiFi.RSSI()), 50, 90, 96, 0);
+        auto rssi = WiFi.RSSI();
+        auto rssiColor = 0;
+        if(rssi != 0){
+            rssiColor = map(abs(rssi), 50, 90, 96, 0);
+        }
         // Serial.printf("RSSI %d\n", rssi);
-        led_status[LED_WIFI_IDX] = CHSV(rssi, 255, 70);
+        led_status[LED_WIFI_IDX] = CHSV(rssiColor, 255, 70);
     }
 }
 
