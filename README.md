@@ -5,10 +5,10 @@ You can configure multiple alarms and add new songs to your sd card with a simpl
 
 ![Screenshot](doc/screen01.png "Screenshot of webinterface")
 
-Photos of older PCB version:
+Photos of the current PCB version (without assembled radio antenna connector J10):
 
-![photo](doc/photo01.jpg "Photo of old PCB top")
-![photo](doc/photo02.jpg "Photo of old PCB bottom")
+![photo](doc/photo03.jpg "Photo of current PCB top")
+![photo](doc/photo04.jpg "Photo of current PCB with digital clock display")
 
 ## Features
 
@@ -71,5 +71,5 @@ The ESP32 will reboot and opens an accesspoint where you can connect to your WiF
 
 - [ ] Add alarm timeout (for webstreams, radio etc.)
 - [ ] better web UI based on react
-- [ ] pictures of full assembled board
+- [x] pictures of full assembled board
 - [ ] complete BOM list
