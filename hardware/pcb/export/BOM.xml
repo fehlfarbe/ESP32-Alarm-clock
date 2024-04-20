@@ -2,8 +2,8 @@
 <export version="E">
   <design>
     <source>/home/kolbe/Arduino/ESP32-Alarm-clock/hardware/pcb/mp3alarm.kicad_sch</source>
-    <date>Sat 09 Dec 2023 20:31:50 CET</date>
-    <tool>Eeschema 7.0.9-7.0.9~ubuntu22.04.1</tool>
+    <date>2024-04-20T15:13:04+0200</date>
+    <tool>Eeschema 8.0.1-8.0.1-1~ubuntu22.04.1</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
         <title>ESP32-Alarm-clock</title>
@@ -27,209 +27,304 @@
     <comp ref="C1">
       <value>1nF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>3be2b67d-91a9-4ca7-9b85-2466808ee9b8</tstamps>
     </comp>
     <comp ref="C2">
-      <value>1uF</value>
+      <value>22nF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
-      <tstamps>b7e66be3-9c2d-4696-be8c-920a8f2c800f</tstamps>
+      <tstamps>fd65961f-ffd0-4efd-b667-3dcf96509540</tstamps>
     </comp>
     <comp ref="C3">
       <value>10uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>70d9cef2-5205-4f5e-87fb-8fbc8a1e455c</tstamps>
     </comp>
     <comp ref="C4">
       <value>10uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>569e00ad-32d3-4713-8cbd-8092c39f3161</tstamps>
     </comp>
     <comp ref="C5">
       <value>10uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>a283d549-69b8-41a3-ae3d-209066172fa4</tstamps>
     </comp>
     <comp ref="C6">
       <value>22uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>d67af278-b76f-4dc0-a3c2-b2a44a938d0d</tstamps>
     </comp>
     <comp ref="C7">
       <value>1uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>c73b29c4-9a0f-44f4-8fca-96d89489fd7f</tstamps>
     </comp>
     <comp ref="C10">
       <value>0.1uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>29d6db52-2bd0-491d-9287-b939ae1fbfad</tstamps>
     </comp>
     <comp ref="C11">
       <value>0.1uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>e6fd3150-ecbf-4386-9c69-625dd3bcf1fa</tstamps>
     </comp>
     <comp ref="C12">
       <value>10uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>09db176f-fdbb-4c3e-88e8-d8c45b48340f</tstamps>
     </comp>
     <comp ref="C13">
       <value>0.1uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>cf6a678e-75c0-4daa-8433-195ee689fded</tstamps>
     </comp>
     <comp ref="C14">
       <value>10uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>3dabf677-34df-4fff-b201-b4a533291ea5</tstamps>
     </comp>
     <comp ref="C15">
       <value>47uF</value>
       <footprint>Capacitor_SMD:C_Elec_6.3x5.4</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_Elec_6.3x5.4</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Polarized_Small" description="Polarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Polarized capacitor, small symbol"/>
       <property name="ki_keywords" value="cap capacitor"/>
+      <property name="ki_fp_filters" value="CP_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>1961d58a-3af5-4d1d-ab51-5e14bf196bcb</tstamps>
     </comp>
     <comp ref="C16">
       <value>47uF</value>
       <footprint>Capacitor_SMD:C_Elec_6.3x5.4</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_Elec_6.3x5.4</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Polarized_Small" description="Polarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Polarized capacitor, small symbol"/>
       <property name="ki_keywords" value="cap capacitor"/>
+      <property name="ki_fp_filters" value="CP_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>f73e75a3-eacd-4400-9f11-a55408448237</tstamps>
     </comp>
     <comp ref="C17">
       <value>0.01uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>eb2023f4-8a33-4e79-a2c5-6b44ef32c691</tstamps>
     </comp>
     <comp ref="C18">
       <value>0.01uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>b9b41ceb-032e-4b1a-b62e-8e1a3b33116d</tstamps>
     </comp>
     <comp ref="C19">
       <value>0.1uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>b4550e36-3d25-4f9c-80c5-00b0d8537583</tstamps>
     </comp>
     <comp ref="C20">
       <value>10uF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>c935e024-18b1-48a0-9794-c76555d9b2be</tstamps>
     </comp>
     <comp ref="C21">
       <value>1nF</value>
       <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Capacitor_SMD:C_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Unpolarized capacitor, small symbol"/>
       <property name="ki_keywords" value="capacitor cap"/>
+      <property name="ki_fp_filters" value="C_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>676ced04-92b9-4b4a-8e5f-24353c046b97</tstamps>
     </comp>
@@ -237,11 +332,16 @@
       <value>WS2812B</value>
       <footprint>LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm</footprint>
       <datasheet>https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf</datasheet>
+      <fields>
+        <field name="Footprint">LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm</field>
+        <field name="Datasheet">https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf</field>
+        <field name="Description"/>
+      </fields>
       <libsource lib="LED" part="WS2812B" description="RGB LED with integrated controller"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="RGB LED with integrated controller"/>
       <property name="ki_keywords" value="RGB LED NeoPixel addressable"/>
+      <property name="ki_fp_filters" value="LED*WS2812*PLCC*5.0x5.0mm*P3.2mm*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00000000-0000-0000-0000-00005fbb8694</tstamps>
     </comp>
@@ -249,99 +349,144 @@
       <value>WS2812B</value>
       <footprint>LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm</footprint>
       <datasheet>https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf</datasheet>
+      <fields>
+        <field name="Footprint">LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm</field>
+        <field name="Datasheet">https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf</field>
+        <field name="Description"/>
+      </fields>
       <libsource lib="LED" part="WS2812B" description="RGB LED with integrated controller"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="RGB LED with integrated controller"/>
       <property name="ki_keywords" value="RGB LED NeoPixel addressable"/>
+      <property name="ki_fp_filters" value="LED*WS2812*PLCC*5.0x5.0mm*P3.2mm*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>4bccc0bb-2305-481e-bdaa-5508c7bd15bc</tstamps>
     </comp>
     <comp ref="D3">
       <value>D_Schottky</value>
       <footprint>Diode_SMD:D_0805_2012Metric</footprint>
+      <fields>
+        <field name="Footprint">Diode_SMD:D_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="D_Schottky" description="Schottky diode"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Schottky diode"/>
       <property name="ki_keywords" value="diode Schottky"/>
+      <property name="ki_fp_filters" value="TO-???* *_Diode_* *SingleDiode* D_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>544ff655-e836-4303-a429-71c281f1123b</tstamps>
     </comp>
     <comp ref="D4">
       <value>PWR</value>
       <footprint>LED_SMD:LED_0805_2012Metric</footprint>
+      <fields>
+        <field name="Footprint">LED_SMD:LED_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="LED" description="Light emitting diode"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Light emitting diode"/>
       <property name="ki_keywords" value="LED diode"/>
+      <property name="ki_fp_filters" value="LED* LED_SMD:* LED_THT:*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>d63def40-b721-4f8e-828d-b984f9ce18ba</tstamps>
     </comp>
     <comp ref="FB1">
       <value>FerriteBead_Small</value>
       <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="FerriteBead_Small" description="Ferrite bead, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Ferrite bead, small symbol"/>
       <property name="ki_keywords" value="L ferrite bead inductor filter"/>
+      <property name="ki_fp_filters" value="Inductor_* L_* *Ferrite*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>f7482b1c-8003-46d2-9509-988d8e1d0b82</tstamps>
     </comp>
     <comp ref="FB2">
       <value>FerriteBead_Small</value>
       <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="FerriteBead_Small" description="Ferrite bead, small symbol"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Ferrite bead, small symbol"/>
       <property name="ki_keywords" value="L ferrite bead inductor filter"/>
+      <property name="ki_fp_filters" value="Inductor_* L_* *Ferrite*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>ff0f7f7f-fedf-4e8b-b33f-bfa2cd9380a3</tstamps>
     </comp>
     <comp ref="H1">
       <value>MountingHole_Pad</value>
       <footprint>MountingHole:MountingHole_3.2mm_M3_Pad</footprint>
+      <fields>
+        <field name="Footprint">MountingHole:MountingHole_3.2mm_M3_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Mounting Hole with connection"/>
       <property name="ki_keywords" value="mounting hole"/>
+      <property name="ki_fp_filters" value="MountingHole*Pad*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>905dcc2a-f4b8-4fe1-a6ac-e9da69d510dc</tstamps>
     </comp>
     <comp ref="H2">
       <value>MountingHole_Pad</value>
       <footprint>MountingHole:MountingHole_3.2mm_M3_Pad</footprint>
+      <fields>
+        <field name="Footprint">MountingHole:MountingHole_3.2mm_M3_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Mounting Hole with connection"/>
       <property name="ki_keywords" value="mounting hole"/>
+      <property name="ki_fp_filters" value="MountingHole*Pad*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>f37b3dce-7dbc-432a-af79-7d935e2b7ad8</tstamps>
     </comp>
     <comp ref="H3">
       <value>MountingHole_Pad</value>
       <footprint>MountingHole:MountingHole_3.2mm_M3_Pad</footprint>
+      <fields>
+        <field name="Footprint">MountingHole:MountingHole_3.2mm_M3_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Mounting Hole with connection"/>
       <property name="ki_keywords" value="mounting hole"/>
+      <property name="ki_fp_filters" value="MountingHole*Pad*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>fded48a9-2268-41ea-be8f-f00ec9f88709</tstamps>
     </comp>
     <comp ref="H4">
       <value>MountingHole_Pad</value>
       <footprint>MountingHole:MountingHole_3.2mm_M3_Pad</footprint>
+      <fields>
+        <field name="Footprint">MountingHole:MountingHole_3.2mm_M3_Pad</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Mounting Hole with connection"/>
       <property name="ki_keywords" value="mounting hole"/>
+      <property name="ki_fp_filters" value="MountingHole*Pad*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>e0546aaa-e49e-4084-a03e-24e13f1848b2</tstamps>
     </comp>
@@ -350,6 +495,9 @@
       <footprint>Package_SO:SOP-16_3.9x9.9mm_P1.27mm</footprint>
       <fields>
         <field name="Link">https://de.aliexpress.com/item/1005003182980216.html</field>
+        <field name="Footprint">Package_SO:SOP-16_3.9x9.9mm_P1.27mm</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
       </fields>
       <libsource lib="mp3-alarm" part="RDA5807FP" description=""/>
       <property name="Link" value="https://de.aliexpress.com/item/1005003182980216.html"/>
@@ -361,66 +509,96 @@
     <comp ref="J1">
       <value>AUDIO</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="Footprint">Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Connector" part="Conn_01x03_Male" description="Generic connector, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Generic connector, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00000000-0000-0000-0000-00005fba03b7</tstamps>
     </comp>
     <comp ref="J2">
       <value>SW0</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="Footprint">Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Connector" part="Conn_01x02_Male" description="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00000000-0000-0000-0000-00005fba2322</tstamps>
     </comp>
     <comp ref="J3">
       <value>SW1</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="Footprint">Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Connector" part="Conn_01x02_Male" description="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00000000-0000-0000-0000-00005fba3008</tstamps>
     </comp>
     <comp ref="J4">
       <value>AudioJack3</value>
       <footprint>footprints:PJ-313</footprint>
+      <fields>
+        <field name="Footprint">footprints:PJ-313</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Connector_Audio" part="AudioJack3" description="Audio Jack, 3 Poles (Stereo / TRS)"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Audio Jack, 3 Poles (Stereo / TRS)"/>
       <property name="ki_keywords" value="audio jack receptacle stereo headphones phones TRS connector"/>
+      <property name="ki_fp_filters" value="Jack*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>e581cfe5-5ecb-4c56-b52b-1b5166724d55</tstamps>
     </comp>
     <comp ref="J5">
       <value>I2C</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="Footprint">Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Connector" part="Conn_01x04_Male" description="Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00000000-0000-0000-0000-00005fb9b96d</tstamps>
     </comp>
     <comp ref="J6">
       <value>TM1637</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="Footprint">Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Connector" part="Conn_01x04_Male" description="Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00000000-0000-0000-0000-00005fba110b</tstamps>
     </comp>
@@ -428,15 +606,18 @@
       <value>microSD</value>
       <footprint>pcb:105162-0001</footprint>
       <fields>
-        <field name="DESCRIPTION">Memory Card Connectors 1.45H MICRO SD HEADER WITH D/C PIN</field>
-        <field name="HEIGHT">mm</field>
-        <field name="Link">https://www.mouser.de/ProductDetail/538-105162-0001</field>
         <field name="MANUFACTURER_NAME">Molex</field>
-        <field name="MANUFACTURER_PART_NUMBER">105162-0001</field>
-        <field name="MOUSER_PART_NUMBER">538-105162-0001</field>
         <field name="MOUSER_PRICE-STOCK">https://www.mouser.co.uk/ProductDetail/Molex/105162-0001?qs=1fNsfHe5VsK8daqlgKxZfQ%3D%3D</field>
+        <field name="DESCRIPTION">Memory Card Connectors 1.45H MICRO SD HEADER WITH D/C PIN</field>
+        <field name="MOUSER_PART_NUMBER">538-105162-0001</field>
+        <field name="HEIGHT">mm</field>
+        <field name="MANUFACTURER_PART_NUMBER">105162-0001</field>
+        <field name="Link">https://www.mouser.de/ProductDetail/538-105162-0001</field>
+        <field name="Footprint">pcb:105162-0001</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
       </fields>
-      <libsource lib="mp3alarm-rescue" part="105162-0001-105162-0001" description=""/>
+      <libsource lib="mp3alarm-rescue" part="105162-0001-105162-0001" description="Memory Card Connectors 1.45H MICRO SD HEADER WITH D/C PIN"/>
       <property name="MANUFACTURER_NAME" value="Molex"/>
       <property name="MOUSER_PRICE-STOCK" value="https://www.mouser.co.uk/ProductDetail/Molex/105162-0001?qs=1fNsfHe5VsK8daqlgKxZfQ%3D%3D"/>
       <property name="DESCRIPTION" value="Memory Card Connectors 1.45H MICRO SD HEADER WITH D/C PIN"/>
@@ -452,22 +633,32 @@
     <comp ref="J8">
       <value>5V</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="Footprint">Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Connector" part="Conn_01x02_Male" description="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00000000-0000-0000-0000-00005ffa7191</tstamps>
     </comp>
     <comp ref="J9">
       <value>ANT</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="Footprint">Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Connector" part="Conn_01x01_Male" description="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
       <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00000000-0000-0000-0000-00005fc132e3</tstamps>
     </comp>
@@ -475,11 +666,16 @@
       <value>Conn_Coaxial</value>
       <footprint>Connector:F_Sat_Connector</footprint>
       <datasheet> ~</datasheet>
+      <fields>
+        <field name="Footprint">Connector:F_Sat_Connector</field>
+        <field name="Datasheet"> ~</field>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, LEMO, ...)"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, LEMO, ...)"/>
       <property name="ki_keywords" value="BNC SMA SMB SMC LEMO coaxial connector CINCH RCA"/>
+      <property name="ki_fp_filters" value="*BNC* *SMA* *SMB* *SMC* *Cinch* *LEMO*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>ed43cdc7-c48a-4d9a-b058-fd1b98fd73b5</tstamps>
     </comp>
@@ -489,265 +685,382 @@
       <datasheet>https://www.usb.org/sites/default/files/documents/usb_type-c.zip</datasheet>
       <fields>
         <field name="Link">https://www.mouser.de/ProductDetail/656-DX07S016JA1R1500</field>
+        <field name="Footprint">Connector_USB:USB_C_Receptacle_JAE_DX07S016JA1R1500</field>
+        <field name="Datasheet">https://www.usb.org/sites/default/files/documents/usb_type-c.zip</field>
+        <field name="Description"/>
       </fields>
       <libsource lib="Connector" part="USB_C_Receptacle_USB2.0" description="USB 2.0-only Type-C Receptacle connector"/>
       <property name="Link" value="https://www.mouser.de/ProductDetail/656-DX07S016JA1R1500"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="USB 2.0-only Type-C Receptacle connector"/>
       <property name="ki_keywords" value="usb universal serial bus type-C USB2.0"/>
+      <property name="ki_fp_filters" value="USB*C*Receptacle*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>eebd0c5b-353d-49b7-83ec-68e5fa9114ce</tstamps>
     </comp>
     <comp ref="R1">
       <value>500</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00000000-0000-0000-0000-00005fc28a60</tstamps>
     </comp>
     <comp ref="R2">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>1d82ad61-f500-4ee2-bc0d-7b498c860fea</tstamps>
     </comp>
     <comp ref="R3">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>ac1a17a9-aa9c-47e8-aeb5-02792cd35d42</tstamps>
     </comp>
     <comp ref="R6">
       <value>5k1</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>17371d62-f887-4e6c-bf04-b76f27f0124a</tstamps>
     </comp>
     <comp ref="R7">
       <value>5k1</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>9ad3c9fb-3988-4aec-ae78-21e6630576a0</tstamps>
     </comp>
     <comp ref="R8">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>987cc977-8b73-466d-8309-c0c54ed617c7</tstamps>
     </comp>
     <comp ref="R9">
       <value>680</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>691ce3f1-5033-4fa5-ac9f-32c96e2486ab</tstamps>
     </comp>
     <comp ref="R10">
       <value>220k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>87b41983-832c-43d3-9664-c46cf163ec1a</tstamps>
     </comp>
     <comp ref="R11">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>5ae8488b-167c-461c-9d26-8fb7f44e9d7b</tstamps>
     </comp>
     <comp ref="R12">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>b7769e59-45f4-4ef5-ad5b-33ca0b271f18</tstamps>
     </comp>
     <comp ref="R13">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>29216a6e-c5f2-4515-aac8-a3751cb26c9c</tstamps>
     </comp>
     <comp ref="R14">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>9619224b-9568-4572-80b7-97839970e29a</tstamps>
     </comp>
     <comp ref="R15">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>6bbd9a0c-8cd3-465d-b1e7-2a7e45e42702</tstamps>
     </comp>
     <comp ref="R16">
       <value>220k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>53efc242-a473-4cb9-9a1b-842618ccb2b0</tstamps>
     </comp>
     <comp ref="R17">
       <value>100</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>76624703-91fb-47e9-a230-f5c51bedeb30</tstamps>
     </comp>
     <comp ref="R18">
       <value>100</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>44079989-bc42-4bd9-907e-86adf728fe72</tstamps>
     </comp>
     <comp ref="R19">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>bde7abab-c626-40fd-b4a2-7b56ef11a97a</tstamps>
     </comp>
     <comp ref="R20">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>c5185c60-47ab-4fe5-8635-4520b1c8177e</tstamps>
     </comp>
     <comp ref="R21">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>108b66fd-b9e2-46fa-9bf9-17290932eff6</tstamps>
     </comp>
     <comp ref="R22">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>281fb62c-242f-4aca-9b96-0ae3645835d3</tstamps>
     </comp>
     <comp ref="R23">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>3d05d4e9-10ce-4b57-bd17-82856bc4c0ee</tstamps>
     </comp>
     <comp ref="R24">
       <value>10k</value>
       <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <fields>
+        <field name="Footprint">Resistor_SMD:R_1206_3216Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Resistor"/>
       <property name="ki_keywords" value="R res resistor"/>
+      <property name="ki_fp_filters" value="R_*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>5d214410-5fac-4488-b370-9b72bb7f6f9c</tstamps>
     </comp>
     <comp ref="SW1">
       <value>SW_RST</value>
       <footprint>Button_Switch_SMD:SW_SPST_CK_RS282G05A3</footprint>
+      <fields>
+        <field name="Footprint">Button_Switch_SMD:SW_SPST_CK_RS282G05A3</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Switch" part="SW_Push" description="Push button switch, generic, two pins"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Push button switch, generic, two pins"/>
       <property name="ki_keywords" value="switch normally-open pushbutton push-button"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>183ff488-cb5d-493d-bff0-715abcdc9fe1</tstamps>
@@ -755,10 +1068,14 @@
     <comp ref="SW2">
       <value>SW_BOOT</value>
       <footprint>Button_Switch_SMD:SW_SPST_CK_RS282G05A3</footprint>
+      <fields>
+        <field name="Footprint">Button_Switch_SMD:SW_SPST_CK_RS282G05A3</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Switch" part="SW_Push" description="Push button switch, generic, two pins"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Push button switch, generic, two pins"/>
       <property name="ki_keywords" value="switch normally-open pushbutton push-button"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>0bb6943d-a5f3-40a0-9a98-6b1ac6db7571</tstamps>
@@ -769,13 +1086,16 @@
       <datasheet>http://www.nxp.com/docs/en/data-sheet/UDA1334ATS.pdf</datasheet>
       <fields>
         <field name="Link">https://de.aliexpress.com/item/4000209842666.html</field>
+        <field name="Footprint">Package_SO:SSOP-16_4.4x5.2mm_P0.65mm</field>
+        <field name="Datasheet">http://www.nxp.com/docs/en/data-sheet/UDA1334ATS.pdf</field>
+        <field name="Description"/>
       </fields>
       <libsource lib="Audio" part="UDA1334ATS" description="Low Power Audio DAC with PLL, SSOP-16"/>
       <property name="Link" value="https://de.aliexpress.com/item/4000209842666.html"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Low Power Audio DAC with PLL, SSOP-16"/>
       <property name="ki_keywords" value="audio dac 2ch 24bit 96kHz"/>
+      <property name="ki_fp_filters" value="SSOP*4.4x5.2mm*P0.65mm*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>5ede69a8-0a8f-4408-8ad6-e17306716a80</tstamps>
     </comp>
@@ -785,12 +1105,14 @@
       <datasheet>https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf</datasheet>
       <fields>
         <field name="Link">https://www.mouser.de/ProductDetail/356-ESP32S3WROOM1N16</field>
+        <field name="Footprint">PCM_Espressif:ESP32-S3-WROOM-1</field>
+        <field name="Datasheet">https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf</field>
+        <field name="Description"/>
       </fields>
       <libsource lib="PCM_Espressif" part="ESP32-S3-WROOM-1" description="2.4 GHz WiFi (802.11 b/g/n) and Bluetooth ® 5 (LE) module Built around ESP32S3 series of SoCs, Xtensa ® dualcore 32bit LX7 microprocessor Flash up to 16 MB, PSRAM up to 8 MB 36 GPIOs, rich set of peripherals Onboard PCB antenna"/>
       <property name="Link" value="https://www.mouser.de/ProductDetail/356-ESP32S3WROOM1N16"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="2.4 GHz WiFi (802.11 b/g/n) and Bluetooth ® 5 (LE) module Built around ESP32S3 series of SoCs, Xtensa ® dualcore 32bit LX7 microprocessor Flash up to 16 MB, PSRAM up to 8 MB 36 GPIOs, rich set of peripherals Onboard PCB antenna"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00ccbdeb-4565-4989-96f9-8c59f01567c6</tstamps>
     </comp>
@@ -798,22 +1120,32 @@
       <value>AMS1117-3.3</value>
       <footprint>Package_TO_SOT_SMD:SOT-223-3_TabPin2</footprint>
       <datasheet>http://www.advanced-monolithic.com/pdf/ds1117.pdf</datasheet>
+      <fields>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-223-3_TabPin2</field>
+        <field name="Datasheet">http://www.advanced-monolithic.com/pdf/ds1117.pdf</field>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Regulator_Linear" part="AMS1117-3.3" description="1A Low Dropout regulator, positive, 3.3V fixed output, SOT-223"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="1A Low Dropout regulator, positive, 3.3V fixed output, SOT-223"/>
       <property name="ki_keywords" value="linear regulator ldo fixed positive"/>
+      <property name="ki_fp_filters" value="SOT?223*TabPin2*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>76366b64-86db-474b-a7e6-5823c7e55b95</tstamps>
     </comp>
     <comp ref="Y1">
       <value>Crystal</value>
       <footprint>Crystal:Crystal_SMD_2012-2Pin_2.0x1.2mm</footprint>
+      <fields>
+        <field name="Footprint">Crystal:Crystal_SMD_2012-2Pin_2.0x1.2mm</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
       <libsource lib="Device" part="Crystal" description="Two pin crystal"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="mp3alarm.kicad_sch"/>
-      <property name="ki_description" value="Two pin crystal"/>
       <property name="ki_keywords" value="quartz ceramic resonator oscillator"/>
+      <property name="ki_fp_filters" value="Crystal*"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>4365caba-b889-4c53-a8e7-3e545590b553</tstamps>
     </comp>
@@ -830,6 +1162,7 @@
         <field name="Value">UDA1334ATS</field>
         <field name="Footprint">Package_SO:SSOP-16_4.4x5.2mm_P0.65mm</field>
         <field name="Datasheet">http://www.nxp.com/docs/en/data-sheet/UDA1334ATS.pdf</field>
+        <field name="Description">Low Power Audio DAC with PLL, SSOP-16</field>
       </fields>
       <pins>
         <pin num="1" name="BCK" type="input"/>
@@ -859,7 +1192,9 @@
       <fields>
         <field name="Reference">J</field>
         <field name="Value">Conn_01x01_Male</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
       </fields>
       <pins>
         <pin num="1" name="Pin_1" type="passive"/>
@@ -874,7 +1209,9 @@
       <fields>
         <field name="Reference">J</field>
         <field name="Value">Conn_01x02_Male</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
       </fields>
       <pins>
         <pin num="1" name="Pin_1" type="passive"/>
@@ -890,7 +1227,9 @@
       <fields>
         <field name="Reference">J</field>
         <field name="Value">Conn_01x03_Male</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Generic connector, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
       </fields>
       <pins>
         <pin num="1" name="Pin_1" type="passive"/>
@@ -907,7 +1246,9 @@
       <fields>
         <field name="Reference">J</field>
         <field name="Value">Conn_01x04_Male</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)</field>
       </fields>
       <pins>
         <pin num="1" name="Pin_1" type="passive"/>
@@ -930,7 +1271,9 @@
       <fields>
         <field name="Reference">J</field>
         <field name="Value">Conn_Coaxial</field>
+        <field name="Footprint"/>
         <field name="Datasheet"> ~</field>
+        <field name="Description">coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, LEMO, ...)</field>
       </fields>
       <pins>
         <pin num="1" name="In" type="passive"/>
@@ -946,7 +1289,9 @@
       <fields>
         <field name="Reference">J</field>
         <field name="Value">USB_C_Receptacle_USB2.0</field>
+        <field name="Footprint"/>
         <field name="Datasheet">https://www.usb.org/sites/default/files/documents/usb_type-c.zip</field>
+        <field name="Description">USB 2.0-only Type-C Receptacle connector</field>
       </fields>
       <pins>
         <pin num="A1" name="GND" type="passive"/>
@@ -977,7 +1322,9 @@
       <fields>
         <field name="Reference">J</field>
         <field name="Value">AudioJack3</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Audio Jack, 3 Poles (Stereo / TRS)</field>
       </fields>
       <pins>
         <pin num="R" name="" type="passive"/>
@@ -994,7 +1341,9 @@
       <fields>
         <field name="Reference">C</field>
         <field name="Value">C_Polarized_Small</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Polarized capacitor, small symbol</field>
       </fields>
       <pins>
         <pin num="1" name="" type="passive"/>
@@ -1010,7 +1359,9 @@
       <fields>
         <field name="Reference">C</field>
         <field name="Value">C_Small</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Unpolarized capacitor, small symbol</field>
       </fields>
       <pins>
         <pin num="1" name="" type="passive"/>
@@ -1026,7 +1377,9 @@
       <fields>
         <field name="Reference">Y</field>
         <field name="Value">Crystal</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Two pin crystal</field>
       </fields>
       <pins>
         <pin num="1" name="1" type="passive"/>
@@ -1045,7 +1398,9 @@
       <fields>
         <field name="Reference">D</field>
         <field name="Value">D_Schottky</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Schottky diode</field>
       </fields>
       <pins>
         <pin num="1" name="K" type="passive"/>
@@ -1063,7 +1418,9 @@
       <fields>
         <field name="Reference">FB</field>
         <field name="Value">FerriteBead_Small</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Ferrite bead, small symbol</field>
       </fields>
       <pins>
         <pin num="1" name="" type="passive"/>
@@ -1081,7 +1438,9 @@
       <fields>
         <field name="Reference">D</field>
         <field name="Value">LED</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Light emitting diode</field>
       </fields>
       <pins>
         <pin num="1" name="K" type="passive"/>
@@ -1097,7 +1456,9 @@
       <fields>
         <field name="Reference">R</field>
         <field name="Value">R</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Resistor</field>
       </fields>
       <pins>
         <pin num="1" name="" type="passive"/>
@@ -1115,6 +1476,7 @@
         <field name="Value">WS2812B</field>
         <field name="Footprint">LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm</field>
         <field name="Datasheet">https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf</field>
+        <field name="Description">RGB LED with integrated controller</field>
       </fields>
       <pins>
         <pin num="1" name="VDD" type="power_in"/>
@@ -1132,7 +1494,9 @@
       <fields>
         <field name="Reference">H</field>
         <field name="Value">MountingHole_Pad</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Mounting Hole with connection</field>
       </fields>
       <pins>
         <pin num="1" name="1" type="input"/>
@@ -1146,6 +1510,7 @@
         <field name="Value">ESP32-S3-WROOM-1</field>
         <field name="Footprint">PCM_Espressif:ESP32-S3-WROOM-1</field>
         <field name="Datasheet">https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf</field>
+        <field name="Description">2.4 GHz WiFi (802.11 b/g/n) and Bluetooth ® 5 (LE) module Built around ESP32S3 series of SoCs, Xtensa ® dualcore 32bit LX7 microprocessor Flash up to 16 MB, PSRAM up to 8 MB 36 GPIOs, rich set of peripherals Onboard PCB antenna</field>
       </fields>
       <pins>
         <pin num="1" name="GND" type="power_in"/>
@@ -1202,6 +1567,7 @@
         <field name="Value">AMS1117-3.3</field>
         <field name="Footprint">Package_TO_SOT_SMD:SOT-223-3_TabPin2</field>
         <field name="Datasheet">http://www.advanced-monolithic.com/pdf/ds1117.pdf</field>
+        <field name="Description">1A Low Dropout regulator, positive, 3.3V fixed output, SOT-223</field>
       </fields>
       <pins>
         <pin num="1" name="GND" type="power_in"/>
@@ -1215,7 +1581,9 @@
       <fields>
         <field name="Reference">SW</field>
         <field name="Value">SW_Push</field>
+        <field name="Footprint"/>
         <field name="Datasheet">~</field>
+        <field name="Description">Push button switch, generic, two pins</field>
       </fields>
       <pins>
         <pin num="1" name="1" type="passive"/>
@@ -1226,6 +1594,9 @@
       <fields>
         <field name="Reference">IC</field>
         <field name="Value">RDA5807FP</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
       </fields>
       <pins>
         <pin num="1" name="GPIO1" type="bidirectional"/>
@@ -1247,13 +1618,15 @@
       </pins>
     </libpart>
     <libpart lib="mp3alarm-rescue" part="105162-0001-105162-0001">
+      <description>Memory Card Connectors 1.45H MICRO SD HEADER WITH D/C PIN</description>
       <fields>
         <field name="Reference">J</field>
         <field name="Value">105162-0001-105162-0001</field>
         <field name="Footprint">105162-0001</field>
+        <field name="Datasheet"/>
+        <field name="Description">Memory Card Connectors 1.45H MICRO SD HEADER WITH D/C PIN</field>
         <field name="MANUFACTURER_NAME">Molex</field>
         <field name="MOUSER_PRICE-STOCK">https://www.mouser.co.uk/ProductDetail/Molex/105162-0001?qs=1fNsfHe5VsK8daqlgKxZfQ%3D%3D</field>
-        <field name="DESCRIPTION">Memory Card Connectors 1.45H MICRO SD HEADER WITH D/C PIN</field>
         <field name="MOUSER_PART_NUMBER">538-105162-0001</field>
         <field name="HEIGHT">mm</field>
         <field name="MANUFACTURER_PART_NUMBER">105162-0001</field>
@@ -1295,7 +1668,7 @@
       <uri>/usr/share/kicad/symbols//Mechanical.kicad_sym</uri>
     </library>
     <library logical="PCM_Espressif">
-      <uri>/home/kolbe/.local/share/kicad/7.0/3rdparty/symbols/com_github_espressif_kicad-libraries/Espressif.kicad_sym</uri>
+      <uri>/home/kolbe/.local/share/kicad/8.0/3rdparty/symbols/com_github_espressif_kicad-libraries/Espressif.kicad_sym</uri>
     </library>
     <library logical="Regulator_Linear">
       <uri>/usr/share/kicad/symbols//Regulator_Linear.kicad_sym</uri>
@@ -1327,7 +1700,6 @@
       <node ref="IC1" pin="4" pinfunction="FMIN" pintype="input"/>
     </net>
     <net code="3" name="BOOT">
-      <node ref="C2" pin="2" pintype="passive"/>
       <node ref="SW2" pin="1" pinfunction="1" pintype="passive"/>
       <node ref="U3" pin="27" pinfunction="GPIO0/BOOT" pintype="bidirectional"/>
     </net>
@@ -1335,7 +1707,7 @@
       <node ref="C10" pin="1" pintype="passive"/>
       <node ref="C13" pin="2" pintype="passive"/>
       <node ref="C14" pin="2" pintype="passive"/>
-      <node ref="C2" pin="1" pintype="passive"/>
+      <node ref="C2" pin="2" pintype="passive"/>
       <node ref="C3" pin="1" pintype="passive"/>
       <node ref="C4" pin="1" pintype="passive"/>
       <node ref="C5" pin="1" pintype="passive"/>
@@ -1613,6 +1985,7 @@
       <node ref="C10" pin="2" pintype="passive"/>
       <node ref="C13" pin="1" pintype="passive"/>
       <node ref="C14" pin="1" pintype="passive"/>
+      <node ref="C2" pin="1" pintype="passive"/>
       <node ref="C5" pin="2" pintype="passive"/>
       <node ref="C6" pin="2" pintype="passive"/>
       <node ref="FB2" pin="2" pintype="passive"/>

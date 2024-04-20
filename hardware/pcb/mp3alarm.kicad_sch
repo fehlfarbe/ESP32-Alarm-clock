@@ -10632,10 +10632,9 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "09db176f-fdbb-4c3e-88e8-d8c45b48340f")
 		(property "Reference" "C12"
-			(at 91.4463 182.88 90)
+			(at 91.44 192.786 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12188,10 +12187,9 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "3dabf677-34df-4fff-b201-b4a533291ea5")
 		(property "Reference" "C14"
-			(at 83.8137 195.58 90)
+			(at 79.248 193.04 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -16902,10 +16900,9 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "cf6a678e-75c0-4daa-8433-195ee689fded")
 		(property "Reference" "C13"
-			(at 83.8137 189.23 90)
+			(at 83.82 179.07 90)
 			(effects
 				(font
 					(size 1.27 1.27)
