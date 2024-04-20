@@ -1,4 +1,0 @@
-(sym_lib_table
-  (lib (name "mp3alarm-rescue")(type "Legacy")(uri "${KIPRJMOD}/mp3alarm-rescue.lib")(options "")(descr ""))
-  (lib (name "mp3-alarm")(type "KiCad")(uri "${KIPRJMOD}/mp3-alarm.kicad_sym")(options "")(descr ""))
-)

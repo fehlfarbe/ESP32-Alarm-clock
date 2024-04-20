@@ -1,34 +1,28 @@
-#ifndef I2S_BELL_UTILS_H
-#define I2S_BELL_UTILS_H
+#ifndef MP3ALARM_UTILS_H
+#define MP3ALARM_UTILS_H
 #include <Arduino.h>
-#include <WiFi.h>
+#include <FS.h>
+#include <ArduinoJson.h>
+#include <Array.h>
 
-struct Settings
+#define MAX_DOW 7
+
+enum DisplayState
 {
-    // time
-    uint32_t gmt_offset_s = 0;
-    uint32_t dst_offset_s = 0;
-    // audio
-    float audio_volume = 0.f;
-    // network
-    String hostname = "";
-    bool staticIP = false;
-    IPAddress local;
-    IPAddress gateway;
-    IPAddress subnet;
-    IPAddress primaryDNS;   //optional
-    IPAddress secondaryDNS; //optional 
-};
-
-enum DisplayState {
     TIME,
     WIFI_CONNECT,
     WIFI_CONNECTED,
     WIFI_PORTAL,
     SYNC,
-    SD_ERR
+    SD_ERR,
+    SD_ERR_NO_SD,
+    FS_ERR
 };
 
-String dowName(int dow);
+String dowName(uint8_t dow);
+typedef Array<uint8_t, MAX_DOW> DaysOfWeek;
 
-#endif // I2S_BELL_UTILS_H
+bool readJSONFile(fs::FS &fs, String filePath, JsonDocument &doc, DeserializationError &error);
+bool writeJSONFile(fs::FS &fs, String filePath, JsonDocument &doc);
+
+#endif // MP3ALARM_UTILS_H

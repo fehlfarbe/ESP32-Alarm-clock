@@ -5,14 +5,14 @@ You can configure multiple alarms and add new songs to your sd card with a simpl
 
 ![Screenshot](doc/screen01.png "Screenshot of webinterface")
 
-Photos of older PCB version:
+Photos of the current PCB version (without assembled radio antenna connector J10):
 
-![photo](doc/photo01.jpg "Photo of old PCB top")
-![photo](doc/photo02.jpg "Photo of old PCB bottom")
+![photo](doc/photo03.jpg "Photo of current PCB top")
+![photo](doc/photo04.jpg "Photo of current PCB with digital clock display")
 
 ## Features
 
-- designed for ESP32 microcontrollers
+- designed for ESP32 S3 microcontroller
 - plays audio from different sources:
   - MP3/AAC from SD
   - webstreams via WiFi
@@ -24,41 +24,42 @@ Photos of older PCB version:
 
 ## Hardware
 
-### Parts
+The KiCAD project and gerber files are available at `hardware/pcb/`
 
-- ESP32 board: <https://www.aliexpress.com/item/32839344778.html>
-- UDA1334A I2S audio board: <https://de.aliexpress.com/item/4000373056838.html> or <https://www.adafruit.com/product/3678>
-- microSD adapter: <https://www.mouser.de/ProductDetail/538-105162-0001/>
-- FM Stereo Radio Modul RDA5807FP <https://de.aliexpress.com/item/1005003182980216.html>
-- Sime wire as FM antenna or RF Socket and FM antenna <https://de.aliexpress.com/item/1005003995713288.html>
-- TM1637 4-Digit Digital LED 0,56 Display (optional): <https://de.aliexpress.com/item/32843855386.html>
-- 2x WS2812B SMD LED to display WiFi state (optional): <https://de.aliexpress.com/item/32891331762.html>
-- microSD card adapter (Molex 1051620001): <https://www.digikey.de/en/products/detail/molex/1051620001/6133135>
-- microSD card
-- some pin headers and cables to connect the display
-- some 1206 resistors and capacitors, a 32.768Khz oscillator, smd elko
-- headphones or active speakers
+### Schematic
+![schematic](doc/mp3alarm.svg "schematic")
 
-### Breakout board
+### 2D Plot
 
-The breakout board PCB connects all parts
+#### Front
+![PCB front](doc/pcb_front.png "PCB front")
 
-![PCB top](doc/pcb_3d_top.png "PCB top")
-![PCB bottom](doc/pcb_3d_bottom.png "PCB bottom")
+#### Back
+![PCB back](doc/pcb_back.png "PCB back")
 
-The KiCAD project and gerber files are available at `hardware/pcb/mp3alarm`
+### 3D Render
 
-### WiFiLED States
+#### Front
+![PCB front](doc/pcb_render_front.png "PCB front")
 
-At boot:
+#### Back
+![PCB back](doc/pcb_render_back.png "PCB back")
 
-- ![red](https://via.placeholder.com/15/f03c15/000000?text=+) ESP32 boots
-- ![yellow](https://via.placeholder.com/15/ffff00/000000?text=+) connecting to WiFi 
-- ![green](https://via.placeholder.com/15/00ff00/000000?text=+) connected
-- ![blue](https://via.placeholder.com/15/00aaff/000000?text=+) accesspoint active
+### BOM
 
-After boot:
+`hardware/pcb/export/BOM.xml`
 
+## LED States
+
+### Status LED
+
+- ![red](https://via.placeholder.com/15/f03c15/000000?text=+) 1Hz blinking: An Error has occurred while mounting LITTLEFS
+- ![red](https://via.placeholder.com/15/f03c15/000000?text=+) 0.5Hz blinking: Cannot mount SD card
+- ![green](https://via.placeholder.com/15/00ff00/000000?text=+) Everything is fine :)
+
+### WiFi LED
+
+-  ![blue](https://via.placeholder.com/15/0000ff/000000?text=+) AccessPoint mode: Connect to the ESP's access point and configure your WiFi
 -  ![red](https://via.placeholder.com/15/f03c15/000000?text=+)...![green](https://via.placeholder.com/15/00ff00/000000?text=+) WiFi signal strength from bad to good
 
 ## Installation
@@ -68,8 +69,7 @@ The ESP32 will reboot and opens an accesspoint where you can connect to your WiF
 
 ## ToDo
 
-[ ] Add alarm timeout (for webstreams, radio etc.)
-[ ] Switches have no function yet
-[ ] better web UI based on react
-[ ] pictures of full assembled board
-[ ] complete BOM list
+- [ ] Add alarm timeout (for webstreams, radio etc.)
+- [ ] better web UI based on react
+- [x] pictures of full assembled board
+- [ ] complete BOM list
