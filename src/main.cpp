@@ -74,6 +74,7 @@ enum WIFI_LED_STATE
 enum SYSTEM_LED_STATE
 {
     STATE_NONE,
+    STATE_SYS_INIT,
     STATE_FS_ERR,
     STATE_SD_ERR,
     STATE_SD_NO_SD,
@@ -85,7 +86,7 @@ enum SYSTEM_LED_STATE
 #define LED_WIFI_IDX 1
 CRGB led_status[2];
 
-SYSTEM_LED_STATE ledSystem = SYSTEM_LED_STATE::STATE_NONE;
+SYSTEM_LED_STATE ledSystem = SYSTEM_LED_STATE::STATE_SYS_INIT;
 WIFI_LED_STATE ledWiFi = WIFI_LED_STATE::STATE_INIT;
 
 // config
@@ -101,6 +102,7 @@ auto fsWWW = LittleFS;
 
 // WebServer
 AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
 DNSServer dns;
 File fsUploadFile;
 
@@ -130,7 +132,9 @@ void setWiFiLEDState(WIFI_LED_STATE state);
 void setSystemLEDState(SYSTEM_LED_STATE state);
 void configModeCallback(AsyncWiFiManager *myWiFiManager);
 void WiFiEvent(WiFiEvent_t event);
+void notifyWebsocketClients();
 
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);
 void handleAPIConfig(AsyncWebServerRequest *request);
 void handleAPISongs(AsyncWebServerRequest *request);
 void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
@@ -228,7 +232,7 @@ void setup()
     WiFi.onEvent(WiFiEvent);
     // setup WiFI manager
     // wifiManager.setConnectTimeout(10);
-    wifiManager.setConfigPortalTimeout(0);
+    wifiManager.setConfigPortalTimeout(300);
     // wifiManager.setAPCallback(configModeCallback);
     // connect to WiFi
     if (digitalRead(SW1) == LOW)
@@ -284,8 +288,13 @@ void setup()
     updateAlarms();
 
     // HTTP Server
-    server.begin();
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+    // add websocket handler
+    ws.onEvent(onEvent);
+    server.addHandler(&ws);
+    // static files
     server.serveStatic("/", fsWWW, "/www/");
+    // API
     server.on("/api/config", handleAPIConfig);
     // server.on("/api/config/update", HTTP_POST, handleAPIConfigUpdate);
     server.on("/api/state", handleAPIState);
@@ -302,6 +311,7 @@ void setup()
     server.on("/update_firmware", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUploadFirmware);
     server.on("/update_filesystem", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUploadFilesystem);
     server.on("/reboot", HTTP_GET, handleReboot);
+    server.begin();
 
     // setup parallel task
     xTaskCreatePinnedToCore(
@@ -312,6 +322,8 @@ void setup()
         1,                             /* Priority of the task */
         &pTask,                        /* Task handle. */
         0);                            /* Core where the task should run */
+
+    ledSystem = SYSTEM_LED_STATE::STATE_NONE;
 }
 
 void loop()
@@ -354,10 +366,18 @@ void checkAlarmTask(void *parameter)
             {
                 printTime(timeinfo);
             }
-            Serial.printf(", uptime %ds WiFi [%d]: %s, RSSI %d, heap %d, stack %d next alarm: %s\n",
-                          (millis() - startTime) / 1000, WiFi.isConnected(), WiFi.SSID().c_str(), WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL),
+            Serial.printf(", uptime %ds WiFi [%d]: %s, RSSI %d, IP %s, heap %d, stack %d next alarm: %s\n",
+                          (millis() - startTime) / 1000, WiFi.isConnected(), WiFi.SSID().c_str(), WiFi.RSSI(), WiFi.localIP().toString().c_str(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL),
                           config.GetNextAlarmTime().toString().c_str());
             lastRSSI = millis();
+        }
+
+        // do websocket stuff
+        // clear ws clients
+        ws.cleanupClients();
+        if (ws.count())
+        {
+            notifyWebsocketClients();
         }
 
         delay(100);
@@ -603,7 +623,8 @@ void setWiFiLEDState(WIFI_LED_STATE state)
         // show wifi strength
         auto rssi = WiFi.RSSI();
         auto rssiColor = 0;
-        if(rssi != 0){
+        if (rssi != 0)
+        {
             rssiColor = map(abs(rssi), 50, 90, 96, 0);
         }
         // Serial.printf("RSSI %d\n", rssi);
@@ -616,6 +637,10 @@ void setSystemLEDState(SYSTEM_LED_STATE state)
     auto now = millis();
     switch (state)
     {
+    case SYSTEM_LED_STATE::STATE_SYS_INIT:
+        // led_status[LED_STATUS_IDX] = CHSV((now / 100) % 255, 255, LED_MAX_BRIGHTNESS);
+        led_status[LED_STATUS_IDX] = CHSV(0, 0, 0);
+        break;
     case SYSTEM_LED_STATE::STATE_SD_ERR:
         // flash with 1 Hz
         led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, now % 1000 < 500 ? LED_MAX_BRIGHTNESS : 0);
@@ -758,6 +783,87 @@ void WiFiEvent(WiFiEvent_t event)
         break;
     }
     ESP_LOGI(TAG, "WiFi mode %d", WiFi.getMode());
+}
+
+void notifyWebsocketClients()
+{
+    struct tm timeinfo;
+    time_t now;
+    if (getLocalTime(&timeinfo))
+    {
+        time(&now);
+    }
+
+    JsonDocument doc;
+    doc["general"]["hostname"] = config.GetGlobalConfig().hostname;
+    doc["general"]["time"] = now;
+    doc["general"]["free_heap"] = ESP.getFreeHeap();
+    doc["wifi"]["rssi"] = WiFi.RSSI();
+    doc["player"]["playing"] = audio.isPlaying();
+    doc["player"]["paused"] = audio.isPaused();
+    doc["player"]["volume"] = audio.getVolume();
+    doc["player"]["title"] = audio.getCurrentMedia().name;
+    doc["player"]["time"] = audio.getCurrentTime();
+
+    char buffer[1024];
+    auto len = serializeJson(doc, buffer);
+    buffer[len] = 0;
+    ws.textAll(buffer, len);
+    Serial.printf("Sent %s (%d bytes) via Websocket\n", buffer, len);
+}
+
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
+{
+    if (type == WS_EVT_CONNECT)
+    {
+        // client connected
+        Serial.printf("ws[%s][%u] connect\n", server->url(), client->id());
+        // client->printf("{message: 'Hi!'}", client->id());
+        client->ping();
+    }
+    else if (type == WS_EVT_DISCONNECT)
+    {
+        // client disconnected
+        Serial.printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
+    }
+    else if (type == WS_EVT_ERROR)
+    {
+        // error was received from the other end
+        Serial.printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t *)arg), (char *)data);
+    }
+    else if (type == WS_EVT_PONG)
+    {
+        // pong message was received (in response to a ping request maybe)
+        Serial.printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len) ? (char *)data : "");
+    }
+    else if (type == WS_EVT_DATA)
+    {
+        Serial.printf("Got WS data of length %d: %s", len, data);
+        JsonDocument doc;
+        deserializeJson(doc, data);
+        auto action = doc["action"];
+        if (action == "pause")
+        {
+            audio.pause();
+        }
+        else if (action == "stop")
+        {
+            audio.stop();
+        }
+        else if (action == "resume")
+        {
+            audio.resume();
+        }
+        else if (action == "volume")
+        {
+            auto vol = doc["volume"].as<float>();
+            audio.setVolume(vol);
+        }
+    }
+    else
+    {
+        Serial.printf("Got WS data type %d\n", type);
+    }
 }
 
 /**
@@ -1052,38 +1158,40 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
             if (action == "play")
             {
                 String url = doc["url"];
-                float volume = doc["volume"];
-                Serial.printf("Playing song %s with volume %f\n", url.c_str(), volume);
+                String name = doc["name"];
+                // float volume = doc["volume"];
+                Serial.printf("Playing song %s from %s with volume %f\n", name.c_str(), url.c_str(), audio.getVolume());
                 // first stop current audio and set volume
                 audio.stop();
-                audio.setVolume(volume);
-                // play media
+                Media media;
+                media.name = name;
+                // setup media
                 if (url.startsWith("http"))
                 {
-                    audio.playUrl(url);
+                    media.type = STREAM;
+                    media.source = url;
                 }
                 else if (fsSongs.exists(songsDir + url))
                 {
-                    audio.playFile(fsSongs, songsDir + url);
+                    media.source = songsDir + url;
+                    media.filesystem = &fsSongs;
+                    media.type = AUDIOFILE;
                 }
                 else if (url.toFloat())
                 {
                     Serial.printf("Set radio frequency to %.2f\n", url.toFloat());
-                    audio.playRadio((uint16_t)(url.toFloat() * 100));
+                    media.type = FM;
+                    media.source = String(url.toFloat() * 100);
                 }
                 else
                 {
-                    File file = fsSongs.open(url, FILE_READ);
-                    if (!file)
-                    {
-                        String errorMsg = "{\"error\" : \"cannot open file " + url + "\"}";
-                        request->send(500, "application/json", errorMsg);
-                        file.close();
-                        return;
-                    }
-                    file.close();
-                    audio.playFile(fsSongs, url);
+                    // looks like an error
+                    String errorMsg = "{\"error\" : \"cannot open file " + url + "\"}";
+                    request->send(500, "application/json", errorMsg);
+                    return;
                 }
+                // play media
+                audio.playMedia(media);
             }
             else if (action == "stop")
             {
@@ -1109,7 +1217,6 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
 
     // create JSON response
     JsonDocument state;
-    Serial.printf("Get volume %f\n", audio.getVolume());
     state["volume"] = audio.getVolume();
     state["position"] = audio.getFilePosition();
     state["current"] = audio.getCurrentTime();

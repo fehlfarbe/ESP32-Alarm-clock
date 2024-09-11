@@ -9,4 +9,8 @@ hardware/pcb/*.lck
 sd/*
 bkp
 doc/datasheets
-www/api
+
+www_old
+www/public/api
+node_modules
+build

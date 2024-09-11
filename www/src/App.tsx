@@ -11,13 +11,13 @@ function App() {
       <div className="App">
         <header>
           <div>
-            <NavBar initialValue={0} />
+            <NavBar initialValue="/" />
           </div>
         </header>
         <div className="container">
           <Routes>
-            <Route path='/' element={<SongsPage />} />
-            <Route path='/config' element={<ConfigPage />} />
+            <Route path='/' Component={SongsPage}/>
+            <Route path='/config' Component={ConfigPage} />
           </Routes>
         </div>
       </div>

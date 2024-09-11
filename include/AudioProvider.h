@@ -24,6 +24,7 @@ struct Media
     String source;
     fs::FS *filesystem;
     MediaType type;
+    String name;
 };
 
 class AudioProvider
@@ -37,11 +38,13 @@ public:
     void playUrl(String url);
     void playFile(fs::FS &fs, String path);
     void playRadio(uint16_t freq);
+    void playMedia(Media media);
 
     void pause();
     void resume();
     void stop();
     bool isPlaying();
+    bool isPaused();
 
     void setVolume(float vol);
     float getVolume();
@@ -49,6 +52,8 @@ public:
     uint32_t getFilePosition();
     uint32_t getCurrentTime();
     uint32_t getTotalTime();
+
+    Media getCurrentMedia();
 
     void loop();
 
@@ -69,6 +74,8 @@ protected:
     float volume = 0.f;           // volume in VolumeStream has bug
 
     bool playing = false;
+    bool paused = false;
+    Media currentMedia;
     Media nextMedia;
     fs::File currentAudioFile;
     PlayMode playMode;

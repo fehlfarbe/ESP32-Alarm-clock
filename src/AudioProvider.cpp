@@ -57,14 +57,18 @@ void AudioProvider::playRadio(uint16_t freq)
     nextMedia = {String(freq), nullptr, FM};
 }
 
+void AudioProvider::playMedia(Media media) {
+    nextMedia = media;
+}
+
 void AudioProvider::pause()
 {
-    playing = false;
+    paused = true;
 }
 
 void AudioProvider::resume()
 {
-    playing = true;
+    paused = false;
 }
 
 void AudioProvider::stop()
@@ -80,19 +84,25 @@ void AudioProvider::stop()
 
 void AudioProvider::resetStreams()
 {
-        playing = false;
-        // mute and clear pipeline
-        radio.setMute(true);
-        volumeStream.setVolume(0);
-        copier.end();
-        urlStream.end();
-        decoder.end();
-        volumeStream.setVolume(volume);
+    playing = false;
+    paused = false;
+    // mute and clear pipeline
+    radio.setMute(true);
+    volumeStream.setVolume(0);
+    copier.end();
+    urlStream.end();
+    decoder.end();
+    volumeStream.setVolume(volume);
 }
 
 bool AudioProvider::isPlaying()
 {
-    return playing;
+    return playing && !paused;
+}
+
+bool AudioProvider::isPaused()
+{
+    return paused;
 }
 
 void AudioProvider::setVolume(float vol)
@@ -125,6 +135,11 @@ uint32_t AudioProvider::getTotalTime()
     return 0;
 }
 
+Media AudioProvider::getCurrentMedia()
+{
+    return currentMedia;
+}
+
 void AudioProvider::loop()
 {
     // DEBUG
@@ -154,6 +169,7 @@ void AudioProvider::loop()
                 // set state
                 playMode = PLAY_STREAM;
                 playing = true;
+                paused = false;
                 break;
             case AUDIOFILE:
             {
@@ -172,6 +188,7 @@ void AudioProvider::loop()
                 // set state
                 playMode = PLAY_STREAM;
                 playing = true;
+                paused = false;
                 break;
             }
             case FM:
@@ -185,22 +202,39 @@ void AudioProvider::loop()
                 // set state
                 playMode = PLAY_RADIO;
                 playing = true;
+                paused = false;
                 break;
             }
             default:
                 playing = false;
+                paused = false;
                 break;
             }
 
             // media already opened, set nextMedia to NONE
+            currentMedia = nextMedia;
             nextMedia.type = NONE;
         }
 
-        if (playing)
+        if (playing && !paused)
         {
-            copier.copy();
+            if (!copier.isActive())
+            {
+                Serial.printf("Playback active with %s but copier not set up!\n", currentMedia.source.c_str());
+            }
+            else
+            {
+                auto len = copier.copy();
+
+                if (currentMedia.type == AUDIOFILE && len == 0)
+                {
+                    Serial.printf("Nothing to copy for %s...stopping playback\n", currentMedia.source.c_str());
+                    playing = false;
+                    paused = false;
+                }
+            }
         }
-        
+
         xSemaphoreGive(playbackMutex);
     }
 }

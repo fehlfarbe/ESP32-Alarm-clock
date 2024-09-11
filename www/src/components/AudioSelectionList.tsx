@@ -25,6 +25,7 @@ const AudioFileItem = (props: AudioFileItemProps) => {
         let formData = {
             "action": "play",
             "url": item.url,
+            "name": item.name,
             "volume": 0.6
         }
 
@@ -42,7 +43,7 @@ const AudioFileItem = (props: AudioFileItemProps) => {
                 console.log("Saved");
             }
         }).catch((error: any) => {
-            console.log("Error", error);
+            console.log("Error fetching audio files", error);
         })
     }
 
@@ -60,7 +61,11 @@ const AudioFileItem = (props: AudioFileItemProps) => {
 
         let formData = {
             "action": "delete",
-            "song": item
+            "song": {
+                name: item.name,
+                url: item.url ? item.url : "",
+                type: item.type
+            }
         }
 
         fetch(URL_API_SONGS_UPDATE, {
@@ -75,7 +80,6 @@ const AudioFileItem = (props: AudioFileItemProps) => {
                 console.log("Error", response);
             } else {
                 console.log("deleted");
-                // ToDo: reload
                 setLoaded(false);
             }
         }).catch((error: any) => {
@@ -193,6 +197,7 @@ const AudioSelectionList = () => {
     const [tabPage, setTabPage] = React.useState(0);
     const [audioSources, setAudioSources] = useState<Array<AudioSource>>([]);
     const [audioSourcesLoaded, setAudioSourcesLoaded] = useState<boolean>(false);
+    const [audioSourcesLoadedError, setAudioSourcesLoadedError] = useState<boolean>(false);
 
     const handleChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabPage(newValue);
@@ -203,6 +208,9 @@ const AudioSelectionList = () => {
             setAudioSources(songs);
             setAudioSourcesLoaded(true);
             console.log("Loaded songs!", audioSources)
+        }).catch(error => {
+            console.log("Error while loiading audio sources", error);
+            setAudioSourcesLoadedError(true);
         })
     }, [audioSourcesLoaded]);
 

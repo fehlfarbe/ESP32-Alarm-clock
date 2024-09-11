@@ -44,6 +44,7 @@ const WebsocketProvider: FunctionComponent<{ children: ReactNode }> = ({ childre
     }
     socket.onmessage = (event: MessageEvent) => setVal(JSON.parse(event.data))
     socket.onerror = (event: Event) => {
+      event.preventDefault();
       console.log("WS Error...", event);
       setIsReady(false);
     }

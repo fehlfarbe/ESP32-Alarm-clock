@@ -33,12 +33,14 @@ const AudioPlayerControl = () => {
         console.log("Change volume to ", newValue)
         if (typeof newValue === "number") {
             setVolume(newValue);
+            send({"action": "volume", "volume": newValue})
         }
     }
 
     const changeVolumeStep = (step: number) => {
-        setVolume(Math.max(0, Math.min(1, volume + step)))
-        send({"action": "volume", "volume": volume})
+        let newVolume = Math.max(0, Math.min(1, volume + step))
+        setVolume(newVolume)
+        send({"action": "volume", "volume": newVolume})
     }
 
     useEffect(() => {

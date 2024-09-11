@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { WebsocketContext } from './WebsocketProvider';
+import { Tooltip } from '@mui/material';
 
 
 const TimeControl = () => {
@@ -14,13 +15,15 @@ const TimeControl = () => {
     }, [val]);
 
     return (
-        <span>
+        <Tooltip title={time.toLocaleString()}>
+            <span>
             {
                 time.getHours().toString().padStart(2, "0") + ":"
                 + time.getMinutes().toString().padStart(2, "0") + ":"
                 + time.getSeconds().toString().padStart(2, "0")
             }
-        </span>
+            </span>
+        </Tooltip>
     )
 };
 
