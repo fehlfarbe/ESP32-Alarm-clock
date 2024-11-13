@@ -752,7 +752,7 @@ function SettingsViewModel() {
         // when songs are loaded, load config
         $.getJSON("/api/config", function (allData) {
             // general
-            self.general(new General(allData.general.tz,
+            self.general(new General(
                 allData.general.tz,
                 allData.general.audio_volume));
             // network
