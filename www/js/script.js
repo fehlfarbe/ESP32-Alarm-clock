@@ -638,6 +638,13 @@ function Song(name, url, size, type) {
 
         return "";
     }, this);
+
+    self.url_raw = ko.computed(function () {
+        if (self.type() == "fm") {
+            return (parseInt(self.url() * 100)).toString();
+        }
+        return self.url();
+    });
 }
 
 function Network(hostname, static_ip_enabled, static_ip, subnet, gateway, primary_dns, secondary_dns) {
@@ -771,24 +778,25 @@ function SettingsViewModel() {
             }
 
             // alarms
-            var mappedAlarms = $.map(allData.alarms, function (a) {
+            var mappedAlarms = $.map(allData.alarms, function (alarm) {
                 var dowArray = Array();
-                a.dow.forEach(d => {
+                alarm.dow.forEach(d => {
                     dowArray.push(self.weekdays[d]);
                 });
 
                 // compare songs by url or use first of array
-                var song = self.songs().find(f => f.url() === a.file);
+                var song = self.songs().find((f) => alarm.file.toString().endsWith(f.url_raw()));
                 if (song == undefined) {
                     song = self.songs()[0];
                 }
 
-                return new Alarm(a.name,
+                return new Alarm(
+                    alarm.name,
                     dowArray,
-                    a.hour,
-                    a.minute,
+                    alarm.hour,
+                    alarm.minute,
                     song,
-                    a.enabled);
+                    alarm.enabled);
             });
             self.alarms(mappedAlarms);
 
