@@ -354,9 +354,9 @@ void checkAlarmTask(void *parameter)
             {
                 printTime(timeinfo);
             }
-            Serial.printf(", uptime %ds WiFi [%d]: %s, RSSI %d, heap %d, stack %d next alarm: %s\n",
-                          (millis() - startTime) / 1000, WiFi.isConnected(), WiFi.SSID().c_str(), WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL),
-                          config.GetNextAlarmTime().toString().c_str());
+            Serial.printf(", uptime %ds WiFi [%d]: %s IP: %s, RSSI %d, heap %d, stack %d next alarm: %s\n",
+                          (millis() - startTime) / 1000, WiFi.isConnected(), WiFi.SSID().c_str(), WiFi.localIP().toString().c_str(),
+                          WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL), config.GetNextAlarmTime().toString().c_str());
             lastRSSI = millis();
         }
 
@@ -461,7 +461,7 @@ bool checkPlayAlarm()
 
         // stop current playback and set audio volume
         audio.stop();
-        audio.setVolume(config.GetGlobalConfig().audio_volume);
+        audio.setVolume(nextAlarm.getVolume());
 
         auto stream = nextAlarm.getStream();
         Serial.printf("Playing %s of type %s from %s\n", nextAlarm.getName().c_str(),

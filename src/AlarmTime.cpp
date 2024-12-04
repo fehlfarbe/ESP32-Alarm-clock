@@ -46,6 +46,11 @@ namespace AlarmClock
         return alarm.getName();
     }
 
+    float AlarmTime::getVolume()
+    {
+        return alarm.getVolume();
+    }
+
     bool AlarmTime::operator<(const AlarmTime &b) const
     {
         return toSec() < b.toSec();

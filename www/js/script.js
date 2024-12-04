@@ -9,12 +9,13 @@ var english = {
     network_primary_dns: "Primary DNS",
     network_secondary_dns: "Secondary DNS",
     timezone: "Timezone",
-    alarm_volume: "Alarm audio volume",
+    alarm_volume: "Default alarm audio volume",
     alarms: "Alarms",
     name: "Name",
     weekday: "Weekday",
     time: "Time",
     songs: "Audio sources",
+    alarm_volume: "Volume",
     delete: "Delete",
     save_config: "Save Config",
     url: "URL",
@@ -47,12 +48,13 @@ var german = {
     network_primary_dns: "Priärer DNS",
     network_secondary_dns: "Secondärer DNS",
     timezone: "Zeitzone",
-    alarm_volume: "Alarm Lautstärke",
+    alarm_volume: "Standard Alarm Lautstärke",
     alarms: "Wecker",
     name: "Name",
     weekday: "Wochentag",
     time: "Zeit",
     songs: "Audioquellen",
+    alarm_volume: "Lautstärke",
     delete: "Löschen",
     save_config: "Einstellungen speichern",
     url: "URL",
@@ -559,7 +561,7 @@ function modalSuccess(msg) {
 }
 
 
-function Alarm(name, dow, hour, minute, file, enabled) {
+function Alarm(name, dow, hour, minute, file, volume, enabled) {
     // function Alarm(id, alarm) {
     var self = this;
     self.name = ko.observable(name);
@@ -567,6 +569,7 @@ function Alarm(name, dow, hour, minute, file, enabled) {
     self.hour = ko.observable(hour);
     self.minute = ko.observable(minute);
     self.file = ko.observable(file);
+    self.volume = ko.observable(volume);
     self.enabled = ko.observable(enabled);
 
     self.timeForm = ko.pureComputed({
@@ -596,6 +599,7 @@ function Alarm(name, dow, hour, minute, file, enabled) {
         self.dow().forEach(d => {
             obj.dow.push(d.value);
         });
+        obj.volume = parseFloat(self.volume());
         obj.enabled = self.enabled();
         return obj;
     }
@@ -796,6 +800,7 @@ function SettingsViewModel() {
                     alarm.hour,
                     alarm.minute,
                     song,
+                    alarm.volume,
                     alarm.enabled);
             });
             self.alarms(mappedAlarms);
@@ -821,7 +826,7 @@ function SettingsViewModel() {
 
     // Operations
     self.addAlarm = function () {
-        self.alarms.push(new Alarm("new Alarm", [self.weekdays[0]], 0, 0, self.songs[0], true));
+        self.alarms.push(new Alarm("new Alarm", [self.weekdays[0]], 0, 0, self.songs[0], self.general.volume, true));
         $('.selectpicker').selectpicker();
     }
     self.removeAlarm = function (alarm) { self.alarms.remove(alarm) }

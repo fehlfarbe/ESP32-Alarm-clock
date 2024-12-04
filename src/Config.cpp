@@ -27,54 +27,6 @@ namespace AlarmClock
 
     bool Config::Load(JsonDocument &doc)
     {
-        // load alarm settings
-        JsonArray alarmsJSON = doc["alarms"];
-        size_t i = 0;
-        alarms.clear();
-        alarmTimes.clear();
-        for (auto a : alarmsJSON)
-        {
-            if (i == MAX_ALARMS)
-            {
-                Serial.println("Maximum number of alarms reached!");
-                break;
-            }
-            // read music type first
-            String music_name = a["music"];
-            String music_url = a["file"];
-            auto music_type = AlarmClock::MusicStream::stringToType(a["type"]);
-            auto stream = AlarmClock::MusicStream(music_name, music_url, music_type);
-
-            // alarm params
-            String name = a["name"];
-            String file = a["file"];
-            int hour = (int)a["hour"];
-            int min = (int)a["minute"];
-            DaysOfWeek dow;
-            for (const auto &d : a["dow"].as<JsonArray>())
-            {
-                int day = (int)d;
-                dow.push_back(d.as<int>());
-            }
-            bool enabled = a["enabled"].as<bool>();
-
-            // push to list
-            AlarmClock::Alarm alarm(name, dow, hour, min, stream, enabled);
-            alarms.push_back(alarm);
-            Serial.printf("Alarm %s\n", alarm.toString().c_str());
-            if (alarm.isEnabled())
-            {
-                for (const auto &day : alarm.getDow())
-                {
-                    if (alarmTimes.full())
-                    {
-                        Serial.println("Maximum number of alarm times reached!");
-                        break;
-                    }
-                    alarmTimes.push_back(AlarmTime(alarm, day));
-                }
-            }
-        }
 
         // load general settings
         auto general = doc["general"];
@@ -126,6 +78,57 @@ namespace AlarmClock
         if (network.containsKey("secondary_dns"))
         {
             global.secondaryDNS.fromString(network["secondary_dns"].as<String>());
+        }
+
+        // load alarm settings
+        JsonArray alarmsJSON = doc["alarms"];
+        size_t i = 0;
+        alarms.clear();
+        alarmTimes.clear();
+        for (auto a : alarmsJSON)
+        {
+            if (i == MAX_ALARMS)
+            {
+                Serial.println("Maximum number of alarms reached!");
+                break;
+            }
+            // read music type first
+            String music_name = a["music"];
+            String music_url = a["file"];
+            auto music_type = AlarmClock::MusicStream::stringToType(a["type"]);
+            auto stream = AlarmClock::MusicStream(music_name, music_url, music_type);
+
+            // alarm params
+            String name = a["name"];
+            String file = a["file"];
+            int hour = (int)a["hour"];
+            int minute = (int)a["minute"];
+            DaysOfWeek dow;
+            for (const auto &d : a["dow"].as<JsonArray>())
+            {
+                int day = (int)d;
+                dow.push_back(d.as<int>());
+            }
+            bool enabled = a["enabled"].as<bool>();
+            float volume = a["volume"] | 0.11;
+            volume = min(1.f, max(volume, 0.f));
+
+            // push to list
+            AlarmClock::Alarm alarm(name, dow, hour, minute, stream, enabled, volume);
+            alarms.push_back(alarm);
+            Serial.printf("Alarm %s\n", alarm.toString().c_str());
+            if (alarm.isEnabled())
+            {
+                for (const auto &day : alarm.getDow())
+                {
+                    if (alarmTimes.full())
+                    {
+                        Serial.println("Maximum number of alarm times reached!");
+                        break;
+                    }
+                    alarmTimes.push_back(AlarmTime(alarm, day));
+                }
+            }
         }
 
         return true;

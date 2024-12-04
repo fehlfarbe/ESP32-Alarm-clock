@@ -23,6 +23,7 @@ namespace AlarmClock
 
         MusicStream &getStream();
         String getName();
+        float getVolume();
 
         bool operator<(const AlarmTime &b) const;
         bool operator>(const AlarmTime &b) const;
@@ -32,6 +33,7 @@ namespace AlarmClock
     private:
         Alarm alarm;
         uint8_t dow;
+        float volume;
 
         int tmToSec(const struct tm t) const;
     };

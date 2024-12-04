@@ -16,7 +16,7 @@ namespace AlarmClock
     {
     public:
         Alarm();
-        Alarm(String name, DaysOfWeek dow, uint8_t hour, uint8_t minute, MusicStream stream, bool enabled);
+        Alarm(String name, DaysOfWeek dow, uint8_t hour, uint8_t minute, MusicStream stream, bool enabled, float volume=.5f);
         ~Alarm();
 
         String toString();
@@ -27,6 +27,7 @@ namespace AlarmClock
         DaysOfWeek &getDow();
         uint8_t getHour() const;
         uint8_t getMinute() const;
+        float getVolume() const;
         MusicStream &getStream();
 
     private:
@@ -35,6 +36,7 @@ namespace AlarmClock
         DaysOfWeek dow;
         uint8_t hour;
         uint8_t minute;
+        float volume;
         MusicStream stream;
     };
 }

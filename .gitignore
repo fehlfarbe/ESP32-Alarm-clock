@@ -10,3 +10,6 @@ sd/*
 bkp
 doc/datasheets
 www/api
+www/build
+www_old
+node_modules
