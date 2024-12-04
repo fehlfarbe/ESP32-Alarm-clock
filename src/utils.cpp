@@ -7,8 +7,7 @@
  *************************************/
 String dowName(uint8_t dow)
 {
-    switch (dow)
-    {
+    switch (dow) {
     case 0:
         return "Sunday";
     case 1:
@@ -38,7 +37,7 @@ String dowName(uint8_t dow)
  * @return true success
  * @return false not success, more info in error argument
  */
-bool readJSONFile(fs::FS &fs, String filePath, JsonDocument &doc, DeserializationError &error)
+bool readJSONFile(fs::FS& fs, String filePath, JsonDocument& doc, DeserializationError& error)
 {
     // add webstreams from streams
     File file = fs.open(filePath, FILE_READ, false);
@@ -46,8 +45,7 @@ bool readJSONFile(fs::FS &fs, String filePath, JsonDocument &doc, Deserializatio
     file.close();
     Serial.println(json);
     error = deserializeJson(doc, json);
-    if (error)
-    {
+    if (error) {
         Serial.printf("----- parseObject() for %s failed -----\n", filePath.c_str());
         Serial.println(error.c_str());
         return false;
@@ -64,14 +62,13 @@ bool readJSONFile(fs::FS &fs, String filePath, JsonDocument &doc, Deserializatio
  * @return true if successful
  * @return false if not successful
  */
-bool writeJSONFile(fs::FS &fs, String filePath, JsonDocument &doc)
+bool writeJSONFile(fs::FS& fs, String filePath, JsonDocument& doc)
 {
     // open file
     File f = fs.open(filePath, FILE_WRITE, true);
 
     // Serialize JSON to file
-    if (serializeJson(doc, f) == 0)
-    {
+    if (serializeJson(doc, f) == 0) {
         Serial.printf("Failed to writing to file %s\n", filePath.c_str());
         return false;
     }

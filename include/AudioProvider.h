@@ -1,41 +1,30 @@
 #ifndef AUDIOPROVIDER_H
 #define AUDIOPROVIDER_H
 
+#include <AudioTools.h>
 #include <FS.h>
 #include <RDA5807FP.h>
-#include <AudioTools.h>
 
-enum PlayMode
-{
-    PLAY_STREAM,
-    PLAY_RADIO
-};
+enum PlayMode { PLAY_STREAM, PLAY_RADIO };
 
-enum MediaType
-{
-    NONE,
-    STREAM,
-    AUDIOFILE,
-    FM
-};
+enum MediaType { NONE, STREAM, AUDIOFILE, FM };
 
-struct Media
-{
+struct Media {
     String source;
-    fs::FS *filesystem;
+    fs::FS* filesystem;
     MediaType type;
 };
 
-class AudioProvider
-{
+class AudioProvider {
 public:
     AudioProvider();
     ~AudioProvider();
 
-    bool init(uint8_t pinBCK, uint8_t pinData, uint8_t pinWS, uint8_t pinDin, uint8_t scl = SCL, uint8_t sda = SDA);
+    bool init(uint8_t pinBCK, uint8_t pinData, uint8_t pinWS, uint8_t pinDin, uint8_t scl = SCL,
+        uint8_t sda = SDA);
 
     void playUrl(String url);
-    void playFile(fs::FS &fs, String path);
+    void playFile(fs::FS& fs, String path);
     void playRadio(uint16_t freq);
 
     void pause();
@@ -62,11 +51,11 @@ protected:
     URLStream urlStream;
     EncodedAudioStream decoder; // Decoding stream
     VolumeStream volumeStream;
-    StreamCopy copier;   // copy url to decoder
+    StreamCopy copier; // copy url to decoder
 
     uint16_t sample_rate = 44100; // 44.1 kHz
-    uint8_t channels = 2;         // The stream will have 2 channels
-    float volume = 0.f;           // volume in VolumeStream has bug
+    uint8_t channels = 2; // The stream will have 2 channels
+    float volume = 0.f; // volume in VolumeStream has bug
 
     bool playing = false;
     Media nextMedia;

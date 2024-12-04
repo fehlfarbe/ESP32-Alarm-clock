@@ -1,32 +1,32 @@
 #include <Arduino.h>
-#include <WiFi.h>
-#include <DNSServer.h>
-#include <ESPmDNS.h>
-#include <WiFiUdp.h>
-#include <HTTPClient.h>
+#include <ArduinoJson.h>
 #include <AsyncJson.h>
+#include <DNSServer.h>
 #include <ESPAsyncWebServer.h>
 #include <ESPAsyncWiFiManager.h>
-#include <Update.h>
-#include <time.h>
-#include <TimeLib.h>
-#include <ArduinoJson.h>
+#include <ESPmDNS.h>
 #include <FS.h>
-#include <LittleFS.h>
-#include <SPI.h>
-#include <SD_MMC.h>
-#include <Int64String.h>
 #include <FastLED.h>
+#include <HTTPClient.h>
+#include <Int64String.h>
+#include <LittleFS.h>
+#include <SD_MMC.h>
+#include <SPI.h>
 #include <TM1637Display.h>
+#include <TimeLib.h>
+#include <Update.h>
+#include <WiFi.h>
+#include <WiFiUdp.h>
+#include <time.h>
 
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include <esp_log.h>
 
 #include "Alarm.h"
-#include "MusicStream.h"
 #include "AudioProvider.h"
-#include "utils.h"
 #include "Config.h"
+#include "MusicStream.h"
+#include "utils.h"
 
 // Digital I/O used
 #define I2S_DOUT 1
@@ -58,11 +58,10 @@
 // Global variables
 AudioProvider audio;
 unsigned long startTime = millis();
-const char *TAG = "ESP32Alarm";
+const char* TAG = "ESP32Alarm";
 
 // LED
-enum WIFI_LED_STATE
-{
+enum WIFI_LED_STATE {
     STATE_INIT = HUE_PINK,
     STATE_WIFI_CONNECTING = HUE_ORANGE,
     STATE_WIFI_AP = HUE_BLUE,
@@ -71,8 +70,7 @@ enum WIFI_LED_STATE
     STATE_WIFI_DISCONNECTED = HUE_RED
 };
 
-enum SYSTEM_LED_STATE
-{
+enum SYSTEM_LED_STATE {
     STATE_NONE,
     STATE_FS_ERR,
     STATE_SD_ERR,
@@ -115,32 +113,35 @@ TaskHandle_t pTask;
 TaskHandle_t pLedTask;
 
 // function declarations
-void checkAlarmTask(void *parameter);
-void ledTask(void *parameter);
-void initSDCardStructure(fs::FS &fs);
+void checkAlarmTask(void* parameter);
+void ledTask(void* parameter);
+void initSDCardStructure(fs::FS& fs);
 void updateAlarms();
 void nextAlarm();
 void printAlarms();
-void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
+void listDir(fs::FS& fs, const char* dirname, uint8_t levels);
 time_t updateNTPTime();
 void printTime(struct tm);
 bool checkPlayAlarm();
 void showDisplay(DisplayState state);
 void setWiFiLEDState(WIFI_LED_STATE state);
 void setSystemLEDState(SYSTEM_LED_STATE state);
-void configModeCallback(AsyncWiFiManager *myWiFiManager);
+void configModeCallback(AsyncWiFiManager* myWiFiManager);
 void WiFiEvent(WiFiEvent_t event);
 
-void handleAPIConfig(AsyncWebServerRequest *request);
-void handleAPISongs(AsyncWebServerRequest *request);
-void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
-void handleAPIPlayback(AsyncWebServerRequest *request);
-void handleAPIState(AsyncWebServerRequest *request);
-void handleOTAUpdateForm(AsyncWebServerRequest *request);
-void handleOTAUpdateResponse(AsyncWebServerRequest *request);
-void handleOTAUpdateUploadFirmware(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
-void handleOTAUpdateUploadFilesystem(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
-void handleReboot(AsyncWebServerRequest *request);
+void handleAPIConfig(AsyncWebServerRequest* request);
+void handleAPISongs(AsyncWebServerRequest* request);
+void handleAPISongsUpload(AsyncWebServerRequest* request, String filename, size_t index,
+    uint8_t* data, size_t len, bool final);
+void handleAPIPlayback(AsyncWebServerRequest* request);
+void handleAPIState(AsyncWebServerRequest* request);
+void handleOTAUpdateForm(AsyncWebServerRequest* request);
+void handleOTAUpdateResponse(AsyncWebServerRequest* request);
+void handleOTAUpdateUploadFirmware(AsyncWebServerRequest* request, String filename, size_t index,
+    uint8_t* data, size_t len, bool final);
+void handleOTAUpdateUploadFilesystem(AsyncWebServerRequest* request, String filename, size_t index,
+    uint8_t* data, size_t len, bool final);
+void handleReboot(AsyncWebServerRequest* request);
 
 // setup
 void setup()
@@ -153,14 +154,13 @@ void setup()
     // setup LEDs
     FastLED.addLeds<NEOPIXEL, LED_STATUS>(led_status, 2);
     // setup parallel task
-    xTaskCreatePinnedToCore(
-        ledTask,                       /* Function to implement the task */
-        "ledTask",                     /* Name of the task */
+    xTaskCreatePinnedToCore(ledTask, /* Function to implement the task */
+        "ledTask", /* Name of the task */
         getArduinoLoopTaskStackSize(), /* Stack size in words */
-        NULL,                          /* Task input parameter */
-        1,                             /* Priority of the task */
-        &pLedTask,                     /* Task handle. */
-        0);                            /* Core where the task should run */
+        NULL, /* Task input parameter */
+        1, /* Priority of the task */
+        &pLedTask, /* Task handle. */
+        0); /* Core where the task should run */
 
     // setup serial
     Serial.begin(115200);
@@ -181,8 +181,7 @@ void setup()
     display.setBrightness(3, true);
 
     // Initialize LITTLEFS
-    if (!fsWWW.begin(false, "/littlefs", 10))
-    {
+    if (!fsWWW.begin(false, "/littlefs", 10)) {
         showDisplay(DisplayState::FS_ERR);
         Serial.println("An Error has occurred while mounting LITTLEFS");
         ledSystem = SYSTEM_LED_STATE::STATE_FS_ERR;
@@ -194,8 +193,7 @@ void setup()
 
     // Initialize SD
     SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0, SD_MMC_D1, SD_MMC_D2, SD_MMC_D3);
-    while (!SD_MMC.begin("/sdcad", false, false, 20000))
-    {
+    while (!SD_MMC.begin("/sdcad", false, false, 20000)) {
         showDisplay(DisplayState::SD_ERR);
         ledSystem = SYSTEM_LED_STATE::STATE_SD_ERR;
         Serial.println("Card Mount Failed");
@@ -204,8 +202,7 @@ void setup()
     }
 
     uint8_t cardType = SD_MMC.cardType();
-    if (cardType == CARD_NONE)
-    {
+    if (cardType == CARD_NONE) {
         Serial.println("No SD card attached");
         showDisplay(DisplayState::SD_ERR_NO_SD);
         ledSystem = SYSTEM_LED_STATE::STATE_SD_NO_SD;
@@ -231,37 +228,32 @@ void setup()
     wifiManager.setConfigPortalTimeout(0);
     // wifiManager.setAPCallback(configModeCallback);
     // connect to WiFi
-    if (digitalRead(SW1) == LOW)
-    {
+    if (digitalRead(SW1) == LOW) {
         Serial.println("Starting AP...");
         config.GetGlobalConfig().isStaticIPEnabled = false; // disable static ip settings
         wifiManager.resetSettings();
         wifiManager.startConfigPortal(config.GetGlobalConfig().hostname.c_str());
-    }
-    else
-    {
+    } else {
         // setup static ip if it's set in config and SW_WIFI_RESET is not pressed
-        if (config.GetGlobalConfig().isStaticIPEnabled)
-        {
-            Serial.printf("Found static IP config, set IP to %s\n", config.GetGlobalConfig().local.toString().c_str());
-            wifiManager.setSTAStaticIPConfig(config.GetGlobalConfig().local, config.GetGlobalConfig().gateway, config.GetGlobalConfig().subnet,
-                                             config.GetGlobalConfig().primaryDNS, config.GetGlobalConfig().secondaryDNS);
+        if (config.GetGlobalConfig().isStaticIPEnabled) {
+            Serial.printf("Found static IP config, set IP to %s\n",
+                config.GetGlobalConfig().local.toString().c_str());
+            wifiManager.setSTAStaticIPConfig(config.GetGlobalConfig().local,
+                config.GetGlobalConfig().gateway, config.GetGlobalConfig().subnet,
+                config.GetGlobalConfig().primaryDNS, config.GetGlobalConfig().secondaryDNS);
         }
-        if (!wifiManager.autoConnect())
-        {
+        if (!wifiManager.autoConnect()) {
             Serial.println("failed to connect, we should reset as see if it connects");
         }
     }
     Serial.println("WiFi connected!");
 
     // setup mDNS
-    if (!MDNS.begin(config.GetGlobalConfig().hostname.c_str()))
-    {
+    if (!MDNS.begin(config.GetGlobalConfig().hostname.c_str())) {
         Serial.println("Error setting up MDNS responder!");
-    }
-    else
-    {
-        Serial.printf("mDNS responder started with hostname %s.local\n", config.GetGlobalConfig().hostname.c_str());
+    } else {
+        Serial.printf("mDNS responder started with hostname %s.local\n",
+            config.GetGlobalConfig().hostname.c_str());
     }
 
     // show IP
@@ -273,8 +265,7 @@ void setup()
 
     // print current time
     struct tm timeinfo;
-    if (getLocalTime(&timeinfo))
-    {
+    if (getLocalTime(&timeinfo)) {
         Serial.printf("Current time: ");
         printTime(timeinfo);
         Serial.println();
@@ -292,26 +283,26 @@ void setup()
     server.on("/api/songs", handleAPISongs);
     server.on("/api/songs/update", HTTP_POST, handleAPISongs);
     server.on(
-        "/upload", HTTP_POST, [](AsyncWebServerRequest *request)
-        { request->send(200); },
+        "/upload", HTTP_POST, [](AsyncWebServerRequest* request) { request->send(200); },
         handleAPISongsUpload);
     server.on("/api/playback", handleAPIPlayback);
 
     // Simple Firmware Update
     server.on("/update", HTTP_GET, handleOTAUpdateForm);
-    server.on("/update_firmware", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUploadFirmware);
-    server.on("/update_filesystem", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUploadFilesystem);
+    server.on(
+        "/update_firmware", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUploadFirmware);
+    server.on(
+        "/update_filesystem", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUploadFilesystem);
     server.on("/reboot", HTTP_GET, handleReboot);
 
     // setup parallel task
-    xTaskCreatePinnedToCore(
-        checkAlarmTask,                /* Function to implement the task */
-        "checkAlarmTask",              /* Name of the task */
+    xTaskCreatePinnedToCore(checkAlarmTask, /* Function to implement the task */
+        "checkAlarmTask", /* Name of the task */
         getArduinoLoopTaskStackSize(), /* Stack size in words */
-        NULL,                          /* Task input parameter */
-        1,                             /* Priority of the task */
-        &pTask,                        /* Task handle. */
-        0);                            /* Core where the task should run */
+        NULL, /* Task input parameter */
+        1, /* Priority of the task */
+        &pTask, /* Task handle. */
+        0); /* Core where the task should run */
 }
 
 void loop()
@@ -327,36 +318,34 @@ void loop()
     // digitalWrite(LED_BUILTIN, audio.isPlaying());
 }
 
-void checkAlarmTask(void *parameter)
+void checkAlarmTask(void* parameter)
 {
     auto lastRSSI = millis();
-    while (true)
-    {
+    while (true) {
         // check for alarm and play
         checkPlayAlarm();
         // update display time
         showDisplay(DisplayState::TIME);
 
         // check buttons
-        if (digitalRead(SW1) == LOW)
-        {
+        if (digitalRead(SW1) == LOW) {
             Serial.printf("Button SW1 pressed, stopping music.\n");
             audio.pause();
         }
 
         // Serial.printf("Free heap %d\n", ESP.getFreeHeap());
         // Serial.printf("Free stack %d\n", uxTaskGetStackHighWaterMark(NULL));
-        if (millis() - lastRSSI > 1000)
-        {
+        if (millis() - lastRSSI > 1000) {
             // print current time
             struct tm timeinfo;
-            if (getLocalTime(&timeinfo))
-            {
+            if (getLocalTime(&timeinfo)) {
                 printTime(timeinfo);
             }
-            Serial.printf(", uptime %ds WiFi [%d]: %s IP: %s, RSSI %d, heap %d, stack %d next alarm: %s\n",
-                          (millis() - startTime) / 1000, WiFi.isConnected(), WiFi.SSID().c_str(), WiFi.localIP().toString().c_str(),
-                          WiFi.RSSI(), ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL), config.GetNextAlarmTime().toString().c_str());
+            Serial.printf(
+                ", uptime %ds WiFi [%d]: %s IP: %s, RSSI %d, heap %d, stack %d next alarm: %s\n",
+                (millis() - startTime) / 1000, WiFi.isConnected(), WiFi.SSID().c_str(),
+                WiFi.localIP().toString().c_str(), WiFi.RSSI(), ESP.getFreeHeap(),
+                uxTaskGetStackHighWaterMark(NULL), config.GetNextAlarmTime().toString().c_str());
             lastRSSI = millis();
         }
 
@@ -365,10 +354,9 @@ void checkAlarmTask(void *parameter)
     Serial.println("Exit task...");
 }
 
-void ledTask(void *parameter)
+void ledTask(void* parameter)
 {
-    while (true)
-    {
+    while (true) {
         setSystemLEDState(ledSystem);
         setWiFiLEDState(ledWiFi);
         FastLED.show();
@@ -382,22 +370,19 @@ void ledTask(void *parameter)
  *
  * @param fs FileSystem (LITTLEFS, SPIFFS, SD; ...)
  *************************************/
-void initSDCardStructure(fs::FS &fs)
+void initSDCardStructure(fs::FS& fs)
 {
-    if (!fs.exists(configPath))
-    {
+    if (!fs.exists(configPath)) {
         Serial.println("Config file does not exist! Save default values to file");
         config.Save(fsConfig, configPath);
     }
-    if (!fs.exists(streamsPath))
-    {
+    if (!fs.exists(streamsPath)) {
         Serial.println("Streams file does not exist! Creating empty file.");
         File streams = fs.open(streamsPath, FILE_WRITE);
         streams.println("[]");
         streams.close();
     }
-    if (!fs.exists(songsDir))
-    {
+    if (!fs.exists(songsDir)) {
         Serial.println("Songs directory does not exist! Creating empty directory.");
         fs.mkdir(songsDir);
     }
@@ -427,8 +412,7 @@ void nextAlarm()
 {
     // select next alarm
     struct tm timeinfo;
-    if (getLocalTime(&timeinfo))
-    {
+    if (getLocalTime(&timeinfo)) {
         config.SelectNextAlarmTime(timeinfo);
         Serial.println("Current time is:");
         printTime(timeinfo);
@@ -445,8 +429,7 @@ void nextAlarm()
 bool checkPlayAlarm()
 {
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo))
-    {
+    if (!getLocalTime(&timeinfo)) {
         Serial.println("Cannot get local time");
         ledSystem = SYSTEM_LED_STATE::STATE_TIME_NOT_SYNCED;
         return false;
@@ -454,9 +437,8 @@ bool checkPlayAlarm()
     ledSystem = SYSTEM_LED_STATE::STATE_NONE;
 
     // check if timer is reached and play file
-    auto &nextAlarm = config.GetNextAlarmTime();
-    if (nextAlarm < timeinfo && nextAlarm.differenceSec(timeinfo) < 10)
-    {
+    auto& nextAlarm = config.GetNextAlarmTime();
+    if (nextAlarm < timeinfo && nextAlarm.differenceSec(timeinfo) < 10) {
         Serial.println("Playing Alarm " + nextAlarm.toString());
 
         // stop current playback and set audio volume
@@ -465,12 +447,11 @@ bool checkPlayAlarm()
 
         auto stream = nextAlarm.getStream();
         Serial.printf("Playing %s of type %s from %s\n", nextAlarm.getName().c_str(),
-                      AlarmClock::MusicStream::typeToString(stream.getType()).c_str(),
-                      stream.getURL().c_str());
+            AlarmClock::MusicStream::typeToString(stream.getType()).c_str(),
+            stream.getURL().c_str());
         Serial.printf("Audio volume: %f\n", config.GetGlobalConfig().audio_volume);
 
-        switch (stream.getType())
-        {
+        switch (stream.getType()) {
         case AlarmClock::MusicType::FILESYSTEM:
             audio.playFile(fsSongs, stream.getURL());
             break;
@@ -503,43 +484,34 @@ void showDisplay(DisplayState state)
     struct tm timeinfo;
     const uint8_t sync[] = {
         SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
-        SEG_F | SEG_G | SEG_B | SEG_C,         // Y
-        SEG_E | SEG_G | SEG_C,                 // n
-        SEG_E | SEG_G | SEG_D                  // c
+        SEG_F | SEG_G | SEG_B | SEG_C, // Y
+        SEG_E | SEG_G | SEG_C, // n
+        SEG_E | SEG_G | SEG_D // c
     };
     const uint8_t conn[] = {
-        SEG_E | SEG_G | SEG_D,         // c
+        SEG_E | SEG_G | SEG_D, // c
         SEG_E | SEG_G | SEG_D | SEG_C, // o
-        SEG_E | SEG_G | SEG_C,         // n
-        SEG_E | SEG_G | SEG_C          // n
+        SEG_E | SEG_G | SEG_C, // n
+        SEG_E | SEG_G | SEG_C // n
     };
-    const uint8_t sd_err[] = {
+    const uint8_t sd_err[] = { SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
+        SEG_E | SEG_G | SEG_D | SEG_C | SEG_B, // d
+        0, 0 };
+    const uint8_t sd_err_no_sd[] = { SEG_E | SEG_G | SEG_C, // n
+        SEG_E | SEG_G | SEG_D | SEG_C, // o
         SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
         SEG_E | SEG_G | SEG_D | SEG_C | SEG_B, // d
-        0,
-        0};
-    const uint8_t sd_err_no_sd[] = {
-        SEG_E | SEG_G | SEG_C,                 // n
-        SEG_E | SEG_G | SEG_D | SEG_C,         // o
+        0, 0 };
+    const uint8_t fs_err[] = { SEG_E | SEG_G | SEG_C, // n
+        SEG_E | SEG_G | SEG_D | SEG_C, // o
+        SEG_A | SEG_F | SEG_G | SEG_B, // F
         SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
-        SEG_E | SEG_G | SEG_D | SEG_C | SEG_B, // d
-        0,
-        0};
-    const uint8_t fs_err[] = {
-        SEG_E | SEG_G | SEG_C,                 // n
-        SEG_E | SEG_G | SEG_D | SEG_C,         // o
-        SEG_A | SEG_F | SEG_G | SEG_B,         // F
-        SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, // S
-        0,
-        0};
-    const uint8_t ap[] = {
-        SEG_A | SEG_F | SEG_B | SEG_B | SEG_E | SEG_C, // A
-        SEG_A | SEG_F | SEG_G | SEG_B | SEG_E,         // P
-        0,
-        0};
+        0, 0 };
+    const uint8_t ap[] = { SEG_A | SEG_F | SEG_B | SEG_B | SEG_E | SEG_C, // A
+        SEG_A | SEG_F | SEG_G | SEG_B | SEG_E, // P
+        0, 0 };
 
-    switch (state)
-    {
+    switch (state) {
     case DisplayState::WIFI_CONNECT:
         display.setSegments(conn);
         break;
@@ -552,12 +524,9 @@ void showDisplay(DisplayState state)
         display.setSegments(sync);
         break;
     case DisplayState::TIME:
-        if (!getLocalTime(&timeinfo, 1000))
-        {
+        if (!getLocalTime(&timeinfo, 1000)) {
             display.showNumberDec(0, true);
-        }
-        else
-        {
+        } else {
             display.showNumberDecEx(timeinfo.tm_hour * 100 + timeinfo.tm_min, 0b01000000, true);
         }
         break;
@@ -584,8 +553,7 @@ void setWiFiLEDState(WIFI_LED_STATE state)
 {
     auto now = millis();
     uint8_t v = LED_MAX_BRIGHTNESS;
-    switch (state)
-    {
+    switch (state) {
     case WIFI_LED_STATE::STATE_INIT:
         v = 0;
         break;
@@ -598,12 +566,11 @@ void setWiFiLEDState(WIFI_LED_STATE state)
 
     led_status[LED_WIFI_IDX] = CHSV(state, 255, v);
 
-    if (WiFi.isConnected())
-    {
+    if (WiFi.isConnected()) {
         // show wifi strength
         auto rssi = WiFi.RSSI();
         auto rssiColor = 0;
-        if(rssi != 0){
+        if (rssi != 0) {
             rssiColor = map(abs(rssi), 50, 90, 96, 0);
         }
         // Serial.printf("RSSI %d\n", rssi);
@@ -614,8 +581,7 @@ void setWiFiLEDState(WIFI_LED_STATE state)
 void setSystemLEDState(SYSTEM_LED_STATE state)
 {
     auto now = millis();
-    switch (state)
-    {
+    switch (state) {
     case SYSTEM_LED_STATE::STATE_SD_ERR:
         // flash with 1 Hz
         led_status[LED_STATUS_IDX] = CHSV(HUE_RED, 255, now % 1000 < 500 ? LED_MAX_BRIGHTNESS : 0);
@@ -643,8 +609,7 @@ void setSystemLEDState(SYSTEM_LED_STATE state)
  *************************************/
 void printAlarms()
 {
-    for (size_t i = 0; i < config.getAalarmTimes().size(); i++)
-    {
+    for (size_t i = 0; i < config.getAalarmTimes().size(); i++) {
         auto a = config.getAalarmTimes()[i];
         Serial.printf("[%02d] Alarm %s\n", i, a.toString().c_str());
     }
@@ -654,36 +619,30 @@ void printAlarms()
  * Print all files on LITTLEFS for debug reasons :)
  *
  *************************************/
-void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
+void listDir(fs::FS& fs, const char* dirname, uint8_t levels)
 {
     Serial.printf("Listing directory: %s\n", dirname);
 
     File root = fs.open(dirname, FILE_READ, false);
-    if (!root)
-    {
+    if (!root) {
         Serial.println("Failed to open directory");
         return;
     }
-    if (!root.isDirectory())
-    {
+    if (!root.isDirectory()) {
         Serial.println("Not a directory");
         return;
     }
 
     File file = root.openNextFile();
-    while (file)
-    {
-        if (file.isDirectory())
-        {
+    while (file) {
+        if (file.isDirectory()) {
             Serial.print("  DIR : ");
             Serial.println(file.name());
-            if (levels)
-            {
-                listDir(fs, (String(dirname) + String("/") + String(file.name())).c_str(), levels - 1);
+            if (levels) {
+                listDir(
+                    fs, (String(dirname) + String("/") + String(file.name())).c_str(), levels - 1);
             }
-        }
-        else
-        {
+        } else {
             Serial.print("  FILE: ");
             Serial.print(file.name());
             Serial.print("  SIZE: ");
@@ -693,7 +652,7 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
     }
 }
 
-void configModeCallback(AsyncWiFiManager *myWiFiManager)
+void configModeCallback(AsyncWiFiManager* myWiFiManager)
 {
     // setLWiFiLEDState(LED_STATE::STATE_WIFI_AP);
     Serial.println("Entered config mode");
@@ -708,8 +667,7 @@ void configModeCallback(AsyncWiFiManager *myWiFiManager)
  */
 void WiFiEvent(WiFiEvent_t event)
 {
-    switch (event)
-    {
+    switch (event) {
     case ARDUINO_EVENT_WIFI_AP_START:
         ESP_LOGI(TAG, "AP Started");
         ledWiFi = WIFI_LED_STATE::STATE_WIFI_AP;
@@ -724,12 +682,9 @@ void WiFiEvent(WiFiEvent_t event)
         break;
     case ARDUINO_EVENT_WIFI_STA_START:
         ESP_LOGI(TAG, "STA Started");
-        if (WiFi.getMode() == WIFI_MODE_APSTA)
-        {
+        if (WiFi.getMode() == WIFI_MODE_APSTA) {
             ledWiFi = WIFI_LED_STATE::STATE_WIFI_AP;
-        }
-        else
-        {
+        } else {
             ledWiFi = WIFI_LED_STATE::STATE_WIFI_CONNECTING;
         }
         break;
@@ -764,22 +719,19 @@ void WiFiEvent(WiFiEvent_t event)
  * @brief returns the config (alarms, general config, ...) as JSON
  *
  */
-void handleAPIConfig(AsyncWebServerRequest *request)
+void handleAPIConfig(AsyncWebServerRequest* request)
 {
     // if method is POST and param exists
-    if (request->method() == HTTP_POST && request->params())
-    {
+    if (request->method() == HTTP_POST && request->params()) {
         Serial.println("Update config");
-        for (size_t i = 0; i < request->params(); i++)
-        {
+        for (size_t i = 0; i < request->params(); i++) {
             Serial.println("Param [" + String(i) + "]: " + request->getParam(i)->value());
         }
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, request->getParam(0)->value());
 
         // Test if parsing succeeds.
-        if (error)
-        {
+        if (error) {
             Serial.print(F("deserializeJson() failed: "));
             Serial.println(error.c_str());
             request->send(500, "text/html", error.c_str());
@@ -790,8 +742,7 @@ void handleAPIConfig(AsyncWebServerRequest *request)
         File file = fsConfig.open(configPath, FILE_WRITE);
 
         // Serialize JSON to file
-        if (serializeJson(doc, file) == 0)
-        {
+        if (serializeJson(doc, file) == 0) {
             Serial.println(F("Failed to write to file"));
             request->send(500, "text/html", "Failed to write to file");
             return;
@@ -807,7 +758,7 @@ void handleAPIConfig(AsyncWebServerRequest *request)
     }
 
     // send loaded config
-    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    AsyncResponseStream* response = request->beginResponseStream("application/json");
     JsonDocument doc;
     config.Save(doc);
     serializeJsonPretty(doc, Serial);
@@ -821,23 +772,21 @@ void handleAPIConfig(AsyncWebServerRequest *request)
  * song, use handleAPISongsUpload
  *
  */
-void handleAPISongs(AsyncWebServerRequest *request)
+void handleAPISongs(AsyncWebServerRequest* request)
 {
     // if method is POST and param exists
-    if (request->method() == HTTP_POST && request->params())
-    {
+    if (request->method() == HTTP_POST && request->params()) {
         Serial.printf("POST with %d params\n", request->params());
-        if (request->getParam(0)->isPost())
-        {
+        if (request->getParam(0)->isPost()) {
             // create JSON buffer
             JsonDocument req;
             DeserializationError error = deserializeJson(req, request->getParam(0)->value());
-            if (error)
-            {
+            if (error) {
                 Serial.println("----- parseObject() failed -----");
                 Serial.println(error.c_str());
                 Serial.println(request->getParam(0)->value());
-                request->send(500, "application/json", "{\"error\" : \"cannot parse JSON: " + String(error.c_str()) + "\"}");
+                request->send(500, "application/json",
+                    "{\"error\" : \"cannot parse JSON: " + String(error.c_str()) + "\"}");
                 return;
             }
 
@@ -847,64 +796,57 @@ void handleAPISongs(AsyncWebServerRequest *request)
             // Serial.println("JSON request:");
             // serializeJson(req, Serial);
 
-            if (action == "delete")
-            {
+            if (action == "delete") {
                 String url = req["song"]["url"];
                 String name = req["song"]["name"];
                 auto type = AlarmClock::MusicStream::stringToType(req["song"]["type"]);
                 Serial.println("Delete song " + url);
                 // delete http streams from streams.json or delete file from SD card
-                if (type == AlarmClock::MusicType::FM || type == AlarmClock::MusicType::STREAM)
-                {
+                if (type == AlarmClock::MusicType::FM || type == AlarmClock::MusicType::STREAM) {
                     // read current streams
                     JsonDocument doc;
                     DeserializationError error;
-                    if (!readJSONFile(fsSongs, streamsPath, doc, error))
-                    {
+                    if (!readJSONFile(fsSongs, streamsPath, doc, error)) {
                         Serial.println("----- parseObject() for streams.json failed -----");
                         Serial.println(error.c_str());
-                        request->send(500, "application/json", "{\"error\" : \"cannot read streams\"}");
+                        request->send(
+                            500, "application/json", "{\"error\" : \"cannot read streams\"}");
                         return;
                     }
                     // find stream/fm on array, delete and write back
                     Serial.println("DOC before");
                     auto streams = doc.as<JsonArray>();
-                    for (JsonArray::iterator it = streams.begin(); it != streams.end(); ++it)
-                    {
-                        if ((*it)["url"] == url && (*it)["name"] == name)
-                        {
+                    for (JsonArray::iterator it = streams.begin(); it != streams.end(); ++it) {
+                        if ((*it)["url"] == url && (*it)["name"] == name) {
                             streams.remove(it);
                             break;
                         }
                     }
-                    if (!writeJSONFile(fsSongs, streamsPath, doc))
-                    {
-                        request->send(500, "application/json", "{\"error\" : \"cannot save streams\"}");
+                    if (!writeJSONFile(fsSongs, streamsPath, doc)) {
+                        request->send(
+                            500, "application/json", "{\"error\" : \"cannot save streams\"}");
                         return;
                     }
-                }
-                else
-                {
+                } else {
                     url = songsDir + url;
-                    Serial.printf("Delete song %s (exists: %d)\n", url.c_str(), fsSongs.exists(url));
-                    if (!fsSongs.remove(url))
-                    {
-                        request->send(500, "application/json", "{\"error\" : \"cannot remove song\"}");
+                    Serial.printf(
+                        "Delete song %s (exists: %d)\n", url.c_str(), fsSongs.exists(url));
+                    if (!fsSongs.remove(url)) {
+                        request->send(
+                            500, "application/json", "{\"error\" : \"cannot remove song\"}");
                     }
                 }
-            }
-            else if (action == "addStream")
-            {
+            } else if (action == "addStream") {
                 // add new stream / fm station
                 // read current streams
                 JsonDocument doc;
                 JsonArray streams = doc.to<JsonArray>();
                 DeserializationError error;
-                if (!readJSONFile(fsSongs, streamsPath, doc, error))
-                {
+                if (!readJSONFile(fsSongs, streamsPath, doc, error)) {
                     Serial.println("----- parseObject() for streams.json failed -----");
                     Serial.println(error.c_str());
-                    request->send(500, "application/json", "{\"error\" : \"cannot read streams: " + String(error.c_str()) + "\"}");
+                    request->send(500, "application/json",
+                        "{\"error\" : \"cannot read streams: " + String(error.c_str()) + "\"}");
                     return;
                 }
                 // copy only necessary fields
@@ -921,14 +863,11 @@ void handleAPISongs(AsyncWebServerRequest *request)
                 // Serial.println();
 
                 // write back to streams
-                if (!writeJSONFile(fsSongs, streamsPath, doc))
-                {
+                if (!writeJSONFile(fsSongs, streamsPath, doc)) {
                     request->send(500, "application/json", "{\"error\" : \"cannot save streams\"");
                     return;
                 }
-            }
-            else if (action == "addSong")
-            {
+            } else if (action == "addSong") {
                 // upload new song to sd card is handled by handleAPISongsUpload()
             }
         }
@@ -937,8 +876,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
     JsonDocument doc;
     JsonArray array = doc.to<JsonArray>();
     DeserializationError error;
-    if (!readJSONFile(fsSongs, streamsPath, doc, error))
-    {
+    if (!readJSONFile(fsSongs, streamsPath, doc, error)) {
         Serial.println("----- parseObject() for streams.json failed -----");
         Serial.println(error.c_str());
         request->send(500, "application/json", "{\"error\" : \"cannot read streams\"");
@@ -947,8 +885,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
     // iterate through songs directory
     File root = fsSongs.open("/songs");
     File file = root.openNextFile();
-    while (file)
-    {
+    while (file) {
         Serial.println(file.name());
         auto f = array.add<JsonObject>();
         f["name"] = String(file.name()).substring(String(file.name()).lastIndexOf("/") + 1);
@@ -959,7 +896,7 @@ void handleAPISongs(AsyncWebServerRequest *request)
     }
 
     // send JSON
-    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    AsyncResponseStream* response = request->beginResponseStream("application/json");
     serializeJsonPretty(doc, Serial);
     serializeJson(doc, *response);
     request->send(response);
@@ -975,27 +912,24 @@ void handleAPISongs(AsyncWebServerRequest *request)
  * @param len length of data array
  * @param final true if last chunk
  */
-void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+void handleAPISongsUpload(AsyncWebServerRequest* request, String filename, size_t index,
+    uint8_t* data, size_t len, bool final)
 {
-    // Serial.printf("Uploading %s (%u bytes written, blocksize %u bytes)\n", filename.c_str(), index, len);
+    // Serial.printf("Uploading %s (%u bytes written, blocksize %u bytes)\n", filename.c_str(),
+    // index, len);
 
     String path = songsDir + filename;
 
     // open file if there is no other file opened
-    if (!index)
-    {
+    if (!index) {
         Serial.printf("Open file %s\n", filename.c_str());
-        if (fsUploadFile)
-        {
+        if (fsUploadFile) {
             Serial.println("File is already opened!");
             request->send(500, "text/plain", "file already opened");
             return;
-        }
-        else
-        {
+        } else {
             fsUploadFile = fsSongs.open(path, FILE_WRITE, true);
-            if (!fsUploadFile)
-            {
+            if (!fsUploadFile) {
                 Serial.println("Cannot open file");
                 request->send(500, "text/plain", "Cannot open file " + path);
             }
@@ -1006,8 +940,7 @@ void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_
     fsUploadFile.write(data, len);
 
     // close file
-    if (final)
-    {
+    if (final) {
         Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index + len);
         JsonDocument buffer;
         buffer["name"] = filename;
@@ -1015,7 +948,7 @@ void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_
         buffer["size"] = fsUploadFile.position();
         fsUploadFile.close();
         // send JSON response
-        AsyncResponseStream *response = request->beginResponseStream("application/json");
+        AsyncResponseStream* response = request->beginResponseStream("application/json");
         serializeJson(buffer, *response);
         request->send(response);
     }
@@ -1028,19 +961,16 @@ void handleAPISongsUpload(AsyncWebServerRequest *request, String filename, size_
  *
  * @param request
  */
-void handleAPIPlayback(AsyncWebServerRequest *request)
+void handleAPIPlayback(AsyncWebServerRequest* request)
 {
     // if method is POST and param exists
-    if (request->method() == HTTP_POST && request->params())
-    {
-        if (request->getParam(0)->isPost())
-        {
+    if (request->method() == HTTP_POST && request->params()) {
+        if (request->getParam(0)->isPost()) {
             // Serial.println(request->getParam(0)->value());
             // create JSON buffer
             JsonDocument doc;
             DeserializationError error = deserializeJson(doc, request->getParam(0)->value());
-            if (error)
-            {
+            if (error) {
                 Serial.println("----- parseObject() failed -----");
                 Serial.println(error.c_str());
                 request->send(500, "application/json", "{\"error\" : \"cannot parse JSON\"");
@@ -1049,8 +979,7 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
 
             String action = doc["action"];
 
-            if (action == "play")
-            {
+            if (action == "play") {
                 String url = doc["url"];
                 float volume = doc["volume"];
                 Serial.printf("Playing song %s with volume %f\n", url.c_str(), volume);
@@ -1058,24 +987,16 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
                 audio.stop();
                 audio.setVolume(volume);
                 // play media
-                if (url.startsWith("http"))
-                {
+                if (url.startsWith("http")) {
                     audio.playUrl(url);
-                }
-                else if (fsSongs.exists(songsDir + url))
-                {
+                } else if (fsSongs.exists(songsDir + url)) {
                     audio.playFile(fsSongs, songsDir + url);
-                }
-                else if (url.toFloat())
-                {
+                } else if (url.toFloat()) {
                     Serial.printf("Set radio frequency to %.2f\n", url.toFloat());
                     audio.playRadio((uint16_t)(url.toFloat() * 100));
-                }
-                else
-                {
+                } else {
                     File file = fsSongs.open(url, FILE_READ);
-                    if (!file)
-                    {
+                    if (!file) {
                         String errorMsg = "{\"error\" : \"cannot open file " + url + "\"}";
                         request->send(500, "application/json", errorMsg);
                         file.close();
@@ -1084,24 +1005,15 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
                     file.close();
                     audio.playFile(fsSongs, url);
                 }
-            }
-            else if (action == "stop")
-            {
+            } else if (action == "stop") {
                 audio.stop();
-            }
-            else if (action == "pause")
-            {
-                if (audio.isPlaying())
-                {
+            } else if (action == "pause") {
+                if (audio.isPlaying()) {
                     audio.pause();
-                }
-                else
-                {
+                } else {
                     audio.resume();
                 }
-            }
-            else if (action == "volume")
-            {
+            } else if (action == "volume") {
                 audio.setVolume(doc["volume"].as<float>());
             }
         }
@@ -1117,7 +1029,7 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
     state["playing"] = audio.isPlaying();
 
     // send JSON response
-    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    AsyncResponseStream* response = request->beginResponseStream("application/json");
     // serializeJson(state, Serial);
     serializeJson(state, *response);
     request->send(response);
@@ -1128,7 +1040,7 @@ void handleAPIPlayback(AsyncWebServerRequest *request)
  *
  * @param request
  */
-void handleAPIState(AsyncWebServerRequest *request)
+void handleAPIState(AsyncWebServerRequest* request)
 {
 
     // create JSON response
@@ -1146,127 +1058,110 @@ void handleAPIState(AsyncWebServerRequest *request)
     doc["alarm_next"] = config.GetNextAlarmTime().toString();
 
     // send JSON response
-    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    AsyncResponseStream* response = request->beginResponseStream("application/json");
     serializeJson(doc, Serial);
     serializeJson(doc, *response);
     request->send(response);
 }
 
-void handleOTAUpdateForm(AsyncWebServerRequest *request)
+void handleOTAUpdateForm(AsyncWebServerRequest* request)
 {
     request->send(200, "text/html",
-                  "<form method='POST' action='/update_firmware' enctype='multipart/form-data'>"
-                  "Firmware: <input type='file' name='firmware'>"
-                  "<input type='submit' value='Update firmware'></form>"
-                  "<form method='POST' action='/update_filesystem' enctype='multipart/form-data'>"
-                  "Filesystem: <input type='file' name='filesystem'>"
-                  "<input type='submit' value='Update filesystem'></form>");
+        "<form method='POST' action='/update_firmware' enctype='multipart/form-data'>"
+        "Firmware: <input type='file' name='firmware'>"
+        "<input type='submit' value='Update firmware'></form>"
+        "<form method='POST' action='/update_filesystem' enctype='multipart/form-data'>"
+        "Filesystem: <input type='file' name='filesystem'>"
+        "<input type='submit' value='Update filesystem'></form>");
 }
 
-void handleOTAUpdateResponse(AsyncWebServerRequest *request)
+void handleOTAUpdateResponse(AsyncWebServerRequest* request)
 {
     bool shouldReboot = !Update.hasError();
-    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
+    AsyncWebServerResponse* response
+        = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
     response->addHeader("Refresh", "20");
     response->addHeader("Location", "/");
     request->send(response);
 }
 
-void handleOTAUpdateUploadFirmware(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+void handleOTAUpdateUploadFirmware(AsyncWebServerRequest* request, String filename, size_t index,
+    uint8_t* data, size_t len, bool final)
 {
-    if (filename != "firmware.bin")
-    {
+    if (filename != "firmware.bin") {
         return;
     }
 
-    if (!index)
-    {
+    if (!index) {
         Serial.printf("Update firmware start: %s\n", filename.c_str());
         //   Update.runAsync(true);
-        if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
-        {
+        if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)) {
             Update.printError(Serial);
-        }
-        else
-        {
+        } else {
             Serial.println("Update firmware begin...");
         }
     }
-    if (!Update.hasError())
-    {
+    if (!Update.hasError()) {
         float progress = (index + len) / (float)request->contentLength();
-        Serial.printf("writing...%d bytes (%d/%d, %.2f%%)\n", len, index + len, request->contentLength(), progress * 100);
-        if (Update.write(data, len) != len)
-        {
+        Serial.printf("writing...%d bytes (%d/%d, %.2f%%)\n", len, index + len,
+            request->contentLength(), progress * 100);
+        if (Update.write(data, len) != len) {
             Update.printError(Serial);
         }
 
         led_status[LED_STATUS_IDX] = CHSV(map(progress * 100, 0, 100, 0, 80), 255, 70);
         FastLED.show();
     }
-    if (final)
-    {
-        if (Update.end(true))
-        {
+    if (final) {
+        if (Update.end(true)) {
             Serial.printf("Update firmware success: %uB\n", index + len);
             ESP.restart();
-        }
-        else
-        {
+        } else {
             Update.printError(Serial);
         }
     }
 }
 
-void handleOTAUpdateUploadFilesystem(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+void handleOTAUpdateUploadFilesystem(AsyncWebServerRequest* request, String filename, size_t index,
+    uint8_t* data, size_t len, bool final)
 {
-    if (filename != "littlefs.bin")
-    {
+    if (filename != "littlefs.bin") {
         return;
     }
 
-    if (!index)
-    {
+    if (!index) {
         Serial.printf("Update filesystem start: %s\n", filename.c_str());
-        if (!Update.begin(UPDATE_SIZE_UNKNOWN, U_SPIFFS))
-        {
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN, U_SPIFFS)) {
             Update.printError(Serial);
-        }
-        else
-        {
+        } else {
             Serial.println("Update filesystem begin...");
         }
     }
-    if (!Update.hasError())
-    {
+    if (!Update.hasError()) {
         float progress = (index + len) / (float)request->contentLength();
-        Serial.printf("writing...%d bytes (%d/%d, %.2f%%)\n", len, index + len, request->contentLength(), progress * 100);
-        if (Update.write(data, len) != len)
-        {
+        Serial.printf("writing...%d bytes (%d/%d, %.2f%%)\n", len, index + len,
+            request->contentLength(), progress * 100);
+        if (Update.write(data, len) != len) {
             Update.printError(Serial);
         }
 
         led_status[LED_STATUS_IDX] = CHSV(map(progress * 100, 0, 100, 0, 80), 255, 70);
         FastLED.show();
     }
-    if (final)
-    {
-        if (Update.end(true))
-        {
+    if (final) {
+        if (Update.end(true)) {
             Serial.printf("Update filesystem success: %uB\n", index + len);
             ESP.restart();
-        }
-        else
-        {
+        } else {
             Update.printError(Serial);
         }
     }
 }
 
-void handleReboot(AsyncWebServerRequest *request)
+void handleReboot(AsyncWebServerRequest* request)
 {
-    request->send(200, "text/html",
-                  "Rebooting...please try to reload page in a couple of seconds.");
+    request->send(
+        200, "text/html", "Rebooting...please try to reload page in a couple of seconds.");
     ESP.restart();
 }
 
@@ -1278,8 +1173,7 @@ void handleReboot(AsyncWebServerRequest *request)
 time_t updateNTPTime()
 {
     struct tm timeinfo;
-    if (!WiFi.isConnected())
-    {
+    if (!WiFi.isConnected()) {
         Serial.println("WiFi not connected, cannot config time!");
         return mktime(&timeinfo);
     }
@@ -1289,12 +1183,9 @@ time_t updateNTPTime()
 
     configTime(0, 0, "0.de.pool.ntp.org", "1.de.pool.ntp.org", "69.10.161.7");
 
-    if (!getLocalTime(&timeinfo))
-    {
+    if (!getLocalTime(&timeinfo)) {
         Serial.println("Failed to obtain time");
-    }
-    else
-    {
+    } else {
         Serial.print("Synced time to: ");
         Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
     }
@@ -1320,9 +1211,7 @@ time_t updateNTPTime()
 void printTime(struct tm info)
 {
     String tz = getenv("TZ");
-    Serial.printf("%s %02d.%02d.%d %02d:%02d:%02d %s, dst: %d",
-                  dowName(info.tm_wday).c_str(),
-                  info.tm_mday, info.tm_mon + 1, info.tm_year + 1900,
-                  info.tm_hour, info.tm_min, info.tm_sec,
-                  tz.c_str(), info.tm_isdst);
+    Serial.printf("%s %02d.%02d.%d %02d:%02d:%02d %s, dst: %d", dowName(info.tm_wday).c_str(),
+        info.tm_mday, info.tm_mon + 1, info.tm_year + 1900, info.tm_hour, info.tm_min, info.tm_sec,
+        tz.c_str(), info.tm_isdst);
 }

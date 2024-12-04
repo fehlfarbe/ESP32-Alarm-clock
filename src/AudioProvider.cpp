@@ -7,7 +7,7 @@ AudioProvider::AudioProvider()
     AudioLogger::instance().begin(Serial, AudioLogger::Warning);
     // setup decoder
     decoder.setOutput(&volumeStream);
-    MP3DecoderHelix *mp3decoder = new MP3DecoderHelix();
+    MP3DecoderHelix* mp3decoder = new MP3DecoderHelix();
     mp3decoder->setMaxFrameSize(4800); // increase mp3 frame size buffer to prevent stuttering
     decoder.setDecoder(mp3decoder);
 
@@ -27,11 +27,10 @@ AudioProvider::AudioProvider()
     playbackMutex = xSemaphoreCreateMutex();
 }
 
-AudioProvider::~AudioProvider()
-{
-}
+AudioProvider::~AudioProvider() { }
 
-bool AudioProvider::init(uint8_t pinBCK, uint8_t pinData, uint8_t pinWS, uint8_t pinDin, uint8_t scl, uint8_t sda)
+bool AudioProvider::init(
+    uint8_t pinBCK, uint8_t pinData, uint8_t pinWS, uint8_t pinDin, uint8_t scl, uint8_t sda)
 {
     // init I2S
     initI2S(pinBCK, pinData, pinWS, pinDin);
@@ -42,36 +41,20 @@ bool AudioProvider::init(uint8_t pinBCK, uint8_t pinData, uint8_t pinWS, uint8_t
     return true;
 }
 
-void AudioProvider::playUrl(String url)
-{
-    nextMedia = {url, nullptr, STREAM};
-}
+void AudioProvider::playUrl(String url) { nextMedia = { url, nullptr, STREAM }; }
 
-void AudioProvider::playFile(fs::FS &fs, String path)
-{
-    nextMedia = {path, &fs, AUDIOFILE};
-}
+void AudioProvider::playFile(fs::FS& fs, String path) { nextMedia = { path, &fs, AUDIOFILE }; }
 
-void AudioProvider::playRadio(uint16_t freq)
-{
-    nextMedia = {String(freq), nullptr, FM};
-}
+void AudioProvider::playRadio(uint16_t freq) { nextMedia = { String(freq), nullptr, FM }; }
 
-void AudioProvider::pause()
-{
-    playing = false;
-}
+void AudioProvider::pause() { playing = false; }
 
-void AudioProvider::resume()
-{
-    playing = true;
-}
+void AudioProvider::resume() { playing = true; }
 
 void AudioProvider::stop()
 {
     Serial.println("Stopping...");
-    if (xSemaphoreTake(playbackMutex, portMAX_DELAY) == pdTRUE)
-    {
+    if (xSemaphoreTake(playbackMutex, portMAX_DELAY) == pdTRUE) {
         resetStreams();
         Serial.println("Stopped...");
         xSemaphoreGive(playbackMutex);
@@ -80,20 +63,17 @@ void AudioProvider::stop()
 
 void AudioProvider::resetStreams()
 {
-        playing = false;
-        // mute and clear pipeline
-        radio.setMute(true);
-        volumeStream.setVolume(0);
-        copier.end();
-        urlStream.end();
-        decoder.end();
-        volumeStream.setVolume(volume);
+    playing = false;
+    // mute and clear pipeline
+    radio.setMute(true);
+    volumeStream.setVolume(0);
+    copier.end();
+    urlStream.end();
+    decoder.end();
+    volumeStream.setVolume(volume);
 }
 
-bool AudioProvider::isPlaying()
-{
-    return playing;
-}
+bool AudioProvider::isPlaying() { return playing; }
 
 void AudioProvider::setVolume(float vol)
 {
@@ -110,39 +90,27 @@ float AudioProvider::getVolume()
     return volume;
 }
 
-uint32_t AudioProvider::getFilePosition()
-{
-    return 0;
-}
+uint32_t AudioProvider::getFilePosition() { return 0; }
 
-uint32_t AudioProvider::getCurrentTime()
-{
-    return 0;
-}
+uint32_t AudioProvider::getCurrentTime() { return 0; }
 
-uint32_t AudioProvider::getTotalTime()
-{
-    return 0;
-}
+uint32_t AudioProvider::getTotalTime() { return 0; }
 
 void AudioProvider::loop()
 {
     // DEBUG
     // radio.debugRadioInfo();
 
-    if (xSemaphoreTake(playbackMutex, portMAX_DELAY) == pdTRUE)
-    {
+    if (xSemaphoreTake(playbackMutex, portMAX_DELAY) == pdTRUE) {
 
-        if (nextMedia.type != NONE)
-        {
+        if (nextMedia.type != NONE) {
             // mute and cleanup first
             Serial.println("Reset stream");
             resetStreams();
             Serial.println("Resetted!");
 
             // open next media
-            switch (nextMedia.type)
-            {
+            switch (nextMedia.type) {
             case STREAM:
                 // activate decoder
                 decoder.setNotifyAudioChange(i2s);
@@ -155,15 +123,13 @@ void AudioProvider::loop()
                 playMode = PLAY_STREAM;
                 playing = true;
                 break;
-            case AUDIOFILE:
-            {
+            case AUDIOFILE: {
                 // activate decoder
                 decoder.setNotifyAudioChange(i2s);
                 decoder.begin();
                 // open file
                 Serial.printf("Open %s\n", nextMedia.source.c_str());
-                if (!nextMedia.filesystem->exists(nextMedia.source.c_str()))
-                {
+                if (!nextMedia.filesystem->exists(nextMedia.source.c_str())) {
                     Serial.println("File does not exist!");
                     break;
                 }
@@ -174,8 +140,7 @@ void AudioProvider::loop()
                 playing = true;
                 break;
             }
-            case FM:
-            {
+            case FM: {
                 // setup radio
                 uint16_t freq = nextMedia.source.toInt();
                 Serial.printf("Playing radio %d\n", freq);
@@ -196,11 +161,10 @@ void AudioProvider::loop()
             nextMedia.type = NONE;
         }
 
-        if (playing)
-        {
+        if (playing) {
             copier.copy();
         }
-        
+
         xSemaphoreGive(playbackMutex);
     }
 }
