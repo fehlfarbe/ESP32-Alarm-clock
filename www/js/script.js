@@ -893,7 +893,7 @@ function SettingsViewModel() {
         } else {
             song = file.url();
         }
-        var volume = self.playback().volume();
+        var volume = self.general().audio_volume();
 
         console.log("Play ", song, " with volume ", volume)
 
@@ -905,6 +905,7 @@ function SettingsViewModel() {
 
         playbackCommand(req).done(function (resp) {
             console.log("started song!");
+            self.playbackUpdate();
         })
             .fail(function (e) {
                 console.log(e);

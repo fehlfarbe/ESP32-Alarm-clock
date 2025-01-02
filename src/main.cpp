@@ -446,10 +446,9 @@ bool checkPlayAlarm()
         audio.setVolume(nextAlarm.getVolume());
 
         auto stream = nextAlarm.getStream();
-        Serial.printf("Playing %s of type %s from %s\n", nextAlarm.getName().c_str(),
+        Serial.printf("Playing %s of type %s from %s with volume %.2f\n", nextAlarm.getName().c_str(),
             AlarmClock::MusicStream::typeToString(stream.getType()).c_str(),
-            stream.getURL().c_str());
-        Serial.printf("Audio volume: %f\n", config.GetGlobalConfig().audio_volume);
+            stream.getURL().c_str(), nextAlarm.getVolume());
 
         switch (stream.getType()) {
         case AlarmClock::MusicType::FILESYSTEM:
@@ -981,7 +980,7 @@ void handleAPIPlayback(AsyncWebServerRequest* request)
 
             if (action == "play") {
                 String url = doc["url"];
-                float volume = doc["volume"];
+                float volume = doc["volume"] | config.GetGlobalConfig().audio_volume;
                 Serial.printf("Playing song %s with volume %f\n", url.c_str(), volume);
                 // first stop current audio and set volume
                 audio.stop();
