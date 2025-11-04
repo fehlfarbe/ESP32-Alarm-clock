@@ -4,6 +4,8 @@
 #include <AudioTools.h>
 #include <FS.h>
 #include <RDA5807FP.h>
+#include <AudioTools/AudioCodecs/CodecMP3Helix.h>
+
 
 enum PlayMode { PLAY_STREAM, PLAY_RADIO };
 
@@ -49,8 +51,9 @@ protected:
     RDA5807FP radio;
     I2SStream i2s;
     URLStream urlStream;
-    EncodedAudioStream decoder; // Decoding stream
+    MP3DecoderHelix mp3decoder;
     VolumeStream volumeStream;
+    EncodedAudioStream decoder = EncodedAudioStream(&volumeStream, &mp3decoder); // Decoding stream
     StreamCopy copier; // copy url to decoder
 
     uint16_t sample_rate = 44100; // 44.1 kHz

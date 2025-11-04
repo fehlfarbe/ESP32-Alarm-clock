@@ -90,12 +90,11 @@ WIFI_LED_STATE ledWiFi = WIFI_LED_STATE::STATE_INIT;
 AlarmClock::Config config;
 
 // data sources
-fs::FS fsSongs = SD_MMC;
-fs::FS fsConfig = SD_MMC;
+#define fsSongs SD_MMC
+#define fsConfig SD_MMC
 const String configPath = "/config.json";
 const String streamsPath = "/streams.json";
 const String songsDir = "/songs/";
-auto fsWWW = LittleFS;
 
 // WebServer
 AsyncWebServer server(80);
@@ -150,6 +149,7 @@ void setup()
     pinMode(SW0, INPUT_PULLUP);
     pinMode(SW1, INPUT_PULLUP);
     pinMode(I2S_MUTE, OUTPUT);
+    pinMode(I2S_DEEM, OUTPUT);
 
     // setup LEDs
     FastLED.addLeds<NEOPIXEL, LED_STATUS>(led_status, 2);
@@ -179,17 +179,19 @@ void setup()
     // setup display
     display.clear();
     display.setBrightness(3, true);
+    display.showNumberDec(1, true);
 
     // Initialize LITTLEFS
-    if (!fsWWW.begin(false, "/littlefs", 10)) {
+    Serial.println("Init flash filesystem");
+    if (!LittleFS.begin(false, "/littlefs", 10, "littlefs")) {
         showDisplay(DisplayState::FS_ERR);
-        Serial.println("An Error has occurred while mounting LITTLEFS");
+        Serial.println("An Error has occurred while mounting flash");
         ledSystem = SYSTEM_LED_STATE::STATE_FS_ERR;
         while (true)
             ;
     }
-    Serial.println("Files on flash:");
-    listDir(fsWWW, "/", 5);
+
+    listDir(LittleFS, "/", 5);
 
     // Initialize SD
     SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0, SD_MMC_D1, SD_MMC_D2, SD_MMC_D3);
@@ -276,7 +278,7 @@ void setup()
 
     // HTTP Server
     server.begin();
-    server.serveStatic("/", fsWWW, "/www/");
+    server.serveStatic("/", LittleFS, "/www/");
     server.on("/api/config", handleAPIConfig);
     // server.on("/api/config/update", HTTP_POST, handleAPIConfigUpdate);
     server.on("/api/state", handleAPIState);
@@ -620,32 +622,28 @@ void printAlarms()
  *************************************/
 void listDir(fs::FS& fs, const char* dirname, uint8_t levels)
 {
-    Serial.printf("Listing directory: %s\n", dirname);
+    ESP_LOGI(TAG, "Listing directory: %s\n", dirname);
 
     File root = fs.open(dirname, FILE_READ, false);
     if (!root) {
-        Serial.println("Failed to open directory");
+        ESP_LOGI(TAG, "Failed to open directory");
         return;
     }
     if (!root.isDirectory()) {
-        Serial.println("Not a directory");
+        ESP_LOGI(TAG, "Not a directory");
         return;
     }
 
     File file = root.openNextFile();
     while (file) {
         if (file.isDirectory()) {
-            Serial.print("  DIR : ");
-            Serial.println(file.name());
+            ESP_LOGI(TAG, "  DIR : %s", file.name());
             if (levels) {
                 listDir(
                     fs, (String(dirname) + String("/") + String(file.name())).c_str(), levels - 1);
             }
         } else {
-            Serial.print("  FILE: ");
-            Serial.print(file.name());
-            Serial.print("  SIZE: ");
-            Serial.println(file.size());
+            ESP_LOGI(TAG, "  FILE: %s SIZE %d", file.name(), file.size());
         }
         file = root.openNextFile();
     }
@@ -1049,8 +1047,8 @@ void handleAPIState(AsyncWebServerRequest* request)
     doc["chip_rev"] = ESP.getChipRevision();
     doc["sdk"] = ESP.getSdkVersion();
     doc["wifi"] = WiFi.RSSI();
-    doc["flash_used"] = fsWWW.usedBytes();
-    doc["flash_total"] = fsWWW.totalBytes();
+    doc["flash_used"] = LittleFS.usedBytes();
+    doc["flash_total"] = LittleFS.totalBytes();
     doc["sd_used"] = int64String(SD_MMC.usedBytes());
     doc["sd_total"] = int64String(SD_MMC.totalBytes());
     doc["cpu_frequ"] = ESP.getCpuFreqMHz();
