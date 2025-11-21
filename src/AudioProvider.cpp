@@ -112,7 +112,9 @@ void AudioProvider::loop()
             switch (nextMedia.type) {
             case STREAM:
                 // activate decoder
-                decoder.addNotifyAudioChange(i2s);
+                if(!decoder.isNotifyActive()){
+                    decoder.addNotifyAudioChange(i2s);
+                }
                 decoder.begin();
                 // open URL
                 urlStream.setTimeout(10000);
@@ -124,7 +126,9 @@ void AudioProvider::loop()
                 break;
             case AUDIOFILE: {
                 // activate decoder
-                decoder.addNotifyAudioChange(i2s);
+                if(!decoder.isNotifyActive()){
+                    decoder.addNotifyAudioChange(i2s);
+                }
                 decoder.begin();
                 // open file
                 Serial.printf("Open %s\n", nextMedia.source.c_str());
