@@ -230,14 +230,16 @@ void setup()
     WiFi.onEvent(WiFiEvent);
     // setup WiFI manager
     // wifiManager.setConnectTimeout(10);
-    wifiManager.setConfigPortalTimeout(0);
+    // wifiManager.setConfigPortalTimeout(0);
     // wifiManager.setAPCallback(configModeCallback);
     // connect to WiFi
     if (digitalRead(SW1) == LOW) {
         Serial.println("Starting AP...");
         config.GetGlobalConfig().isStaticIPEnabled = false; // disable static ip settings
-        wifiManager.resetSettings();
-        wifiManager.startConfigPortal(config.GetGlobalConfig().hostname.c_str());
+        wifiManager.setTryConnectDuringConfigPortal(false); // don't connect while config portal is forced active
+        if(!wifiManager.startConfigPortal(config.GetGlobalConfig().hostname.c_str())) {
+            Serial.println("Cannot start config portal");
+        };
     } else {
         // setup static ip if it's set in config and SW_WIFI_RESET is not pressed
         if (config.GetGlobalConfig().isStaticIPEnabled) {
