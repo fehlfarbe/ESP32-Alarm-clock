@@ -132,6 +132,7 @@ void handleAPIConfig(AsyncWebServerRequest* request);
 void handleAPISongs(AsyncWebServerRequest* request);
 void handleAPISongsUpload(AsyncWebServerRequest* request, String filename, size_t index,
     uint8_t* data, size_t len, bool final);
+void handleAPISongsUploadResponse(AsyncWebServerRequest* request);
 void handleAPIPlayback(AsyncWebServerRequest* request);
 void handleAPIState(AsyncWebServerRequest* request);
 void handleOTAUpdateForm(AsyncWebServerRequest* request);
@@ -141,6 +142,8 @@ void handleOTAUpdateUploadFirmware(AsyncWebServerRequest* request, String filena
 void handleOTAUpdateUploadFilesystem(AsyncWebServerRequest* request, String filename, size_t index,
     uint8_t* data, size_t len, bool final);
 void handleReboot(AsyncWebServerRequest* request);
+void handleCrash(AsyncWebServerRequest* request);
+void handleCoredump(AsyncWebServerRequest* request);
 
 // setup
 void setup()
@@ -284,9 +287,7 @@ void setup()
     server.on("/api/state", handleAPIState);
     server.on("/api/songs", handleAPISongs);
     server.on("/api/songs/update", HTTP_POST, handleAPISongs);
-    server.on(
-        "/upload", HTTP_POST, [](AsyncWebServerRequest* request) { request->send(200); },
-        handleAPISongsUpload);
+    server.on( "/upload", HTTP_POST,handleAPISongsUploadResponse, handleAPISongsUpload);
     server.on("/api/playback", handleAPIPlayback);
 
     // Simple Firmware Update
@@ -296,6 +297,7 @@ void setup()
     server.on(
         "/update_filesystem", HTTP_POST, handleOTAUpdateResponse, handleOTAUpdateUploadFilesystem);
     server.on("/reboot", HTTP_GET, handleReboot);
+    server.on("/coredump", HTTP_GET, handleCoredump);
 
     // setup parallel task
     xTaskCreatePinnedToCore(checkAlarmTask, /* Function to implement the task */
@@ -337,7 +339,7 @@ void checkAlarmTask(void* parameter)
 
         // Serial.printf("Free heap %d\n", ESP.getFreeHeap());
         // Serial.printf("Free stack %d\n", uxTaskGetStackHighWaterMark(NULL));
-        if (millis() - lastRSSI > 1000) {
+        if (millis() - lastRSSI > 5000) {
             // print current time
             struct tm timeinfo;
             if (getLocalTime(&timeinfo)) {
@@ -448,7 +450,8 @@ bool checkPlayAlarm()
         audio.setVolume(nextAlarm.getVolume());
 
         auto stream = nextAlarm.getStream();
-        Serial.printf("Playing %s of type %s from %s with volume %.2f\n", nextAlarm.getName().c_str(),
+        Serial.printf("Playing %s of type %s from %s with volume %.2f\n",
+            nextAlarm.getName().c_str(),
             AlarmClock::MusicStream::typeToString(stream.getType()).c_str(),
             stream.getURL().c_str(), nextAlarm.getVolume());
 
@@ -947,8 +950,16 @@ void handleAPISongsUpload(AsyncWebServerRequest* request, String filename, size_
         // send JSON response
         AsyncResponseStream* response = request->beginResponseStream("application/json");
         serializeJson(buffer, *response);
+        serializeJson(buffer, Serial);
         request->send(response);
     }
+}
+
+/**
+ * 
+ */
+void handleAPISongsUploadResponse(AsyncWebServerRequest* request) {
+    // do nothing, so upload handler can handle the request
 }
 
 /**
@@ -1160,6 +1171,56 @@ void handleReboot(AsyncWebServerRequest* request)
     request->send(
         200, "text/html", "Rebooting...please try to reload page in a couple of seconds.");
     ESP.restart();
+}
+
+void handleCoredump(AsyncWebServerRequest* request)
+{
+    auto resp = request->getResponse();
+
+    esp_partition_iterator_t partition_iterator = esp_partition_find(
+        ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, "coredump");
+
+    const esp_partition_t* partition = esp_partition_get(partition_iterator);
+
+    // determine partition size (0 if not found)
+    size_t file_size = partition ? partition->size : 0;
+    const size_t chunk_size = 1024;
+
+    // release iterator as we keep the partition pointer
+    if (partition_iterator) {
+        esp_partition_iterator_release(partition_iterator);
+    }
+
+    AsyncWebServerResponse* response = request->beginChunkedResponse("application/octet-stream",
+        [partition, file_size, chunk_size](uint8_t* buffer, size_t maxlen, size_t offset) -> size_t {
+            Serial.printf("maxlen=%d, offset=%d\n", maxlen, offset);
+            if (!partition) {
+                Serial.printf("No partition...\n");
+                return 0;
+            }
+            // compute offset and remaining bytes
+            if (offset >= file_size) {
+                Serial.printf("Offset >= file_size %d>=%d\n", offset, file_size);
+                return 0;
+            }
+            size_t bytesToRead
+                = (file_size - offset) > chunk_size ? chunk_size : (file_size - offset);
+            if (bytesToRead > maxlen) {
+                bytesToRead = maxlen;
+            }
+
+            esp_err_t ret = esp_partition_read(partition, offset, buffer, bytesToRead);
+            if (ret != ESP_OK) {
+                Serial.printf("esp_partition_read failed: %d\n", ret);
+                return 0;
+            }
+            Serial.printf(
+                "Sending %u bytes from offset %u\n", (unsigned)bytesToRead, (unsigned)offset);
+            return bytesToRead;
+        });
+    response->addHeader("Content-Disposition", "attachment;filename=core.bin");
+
+    request->send(response);
 }
 
 /**************************************
