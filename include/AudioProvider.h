@@ -4,6 +4,7 @@
 #include <AudioTools.h>
 #include <FS.h>
 #include <RDA5807FP.h>
+#include <AudioTools/Communication/HTTP/URLStream.h>
 #include <AudioTools/AudioCodecs/CodecMP3Helix.h>
 
 
