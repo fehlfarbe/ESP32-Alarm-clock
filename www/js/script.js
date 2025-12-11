@@ -893,7 +893,7 @@ function SettingsViewModel() {
         } else {
             song = file.url();
         }
-        var volume = self.general().audio_volume();
+        var volume = parseFloat(self.playback().volume());
 
         console.log("Play ", song, " with volume ", volume)
 
